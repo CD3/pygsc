@@ -1,5 +1,4 @@
 from pathlib import Path
-import time
 
 from .ScriptRecorder import *
 
@@ -47,30 +46,53 @@ def gsc_record(output,shell):
   print()
   print("Script recording finished.")
 
+
+
 @click.command(help="Display keycodes for keypresses.")
-def display_keycodes():
+@click.option("--keypress_driver","-k",is_flag=True,help="Use keypress event driver instead of characters from stdin.")
+def display_keycodes(keypress_driver):
   import tty, termios, sys, os
+  from pynput.keyboard import Key,Listener
+  import collections
 
-  saved = termios.tcgetattr(sys.stdin.fileno())
-  tty.setraw(sys.stdin.fileno())
-  while True:
-    input = os.read(sys.stdin.fileno(),1024)
-    print(len(input),'chars',end='\n\r')
-    print("raw:",f"`{input}`",end="\n\r")
-    print("utf-8:",f"`{input.decode('utf-8')}`",end="\n\r")
-    sys.stdout.write("int: ")
-    for c in input:
-      sys.stdout.write(f"{c} ")
-    print(end="\n\r")
-    sys.stdout.write("hex: ")
-    for c in input:
-      sys.stdout.write(f"{hex(c)} ")
-    print(end="\n\r")
-    print(end="\n\r")
+  
+  if not keypress_driver:
+    saved = termios.tcgetattr(sys.stdin.fileno())
+    tty.setraw(sys.stdin.fileno())
+    while True:
+      input = os.read(sys.stdin.fileno(),1024)
+      print(len(input),'chars',end='\n\r')
+      print("raw:",f"`{input}`",end="\n\r")
+      print("utf-8:",f"`{input.decode('utf-8')}`",end="\n\r")
+      sys.stdout.write("int: ")
+      for c in input:
+        sys.stdout.write(f"{c} ")
+      print(end="\n\r")
+      sys.stdout.write("hex: ")
+      for c in input:
+        sys.stdout.write(f"{hex(c)} ")
+      print(end="\n\r")
+      print(end="\n\r")
 
-    if len(input) == 1 and ord(input) == 4:
-      break
+      if len(input) == 1 and ord(input) == 4:
+        break
 
 
+    termios.tcsetattr(sys.stdin.fileno(),termios.TCSANOW,saved)
+  else:
 
-  termios.tcsetattr(sys.stdin.fileno(),termios.TCSANOW,saved)
+    def on_press(key):
+      print("stroke: down")
+      print("raw:",key)
+      print()
+
+    def on_release(key):
+      print("stroke: up")
+      print("raw:",key)
+      print()
+
+      if key == Key.esc:
+        return False
+
+    with Listener(on_press=on_press,on_release=on_release) as listender:
+      listender.join()
