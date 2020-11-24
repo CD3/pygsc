@@ -9,13 +9,20 @@ class ScriptedSession:
         self.STDINFD = sys.stdin.fileno()
         self.exit_flag = False
         self.terminal = TerminalSession(self.shell)
+        self.saved_terminal_settings = None
 
     def __del__(self):
-      self.terminal.stop()
+      try:
+        self.terminal.stop()
+      except: pass
+
+      try:
+        termios.tcsetattr(self.STDINFD, termios.TCSANOW, self.saved_terminal_settings)
+      except: pass
 
 
     def run(self):
-        saved_terminal_settings = termios.tcgetattr(self.STDINFD)
+        self.saved_terminal_settings = termios.tcgetattr(self.STDINFD)
         tty.setraw(self.STDINFD)
 
 
@@ -27,7 +34,7 @@ class ScriptedSession:
         self.handle_script_eof()
 
 
-        termios.tcsetattr(self.STDINFD, termios.TCSANOW, saved_terminal_settings)
+        termios.tcsetattr(self.STDINFD, termios.TCSANOW, self.saved_terminal_settings)
 
 
     def handle_script_current_char(self):

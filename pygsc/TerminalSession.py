@@ -76,7 +76,8 @@ class TerminalSession:
 
 
   def send(self,c : str):
-    c = c.encode('utf-8')
+    if not isinstance(c,bytes):
+      c = c.encode('utf-8')
     os.write(self.termfd,c)
 
   def sync_windows_size(self):

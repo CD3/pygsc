@@ -13,9 +13,11 @@ setup(
   author_email = 'clifton.clark@gmail.com',
   url = 'https://github.com/CD3/pygsc',
   download_url = f'https://github.com/CD3/pygsc/archive/{__version__}.tar.gz',
-  install_requires = ['click','prompt_toolkit'],
+  install_requires = ['click'],
   entry_points='''
   [console_scripts]
-  pygsc=pygsc.cli:gsc
+  gsc=pygsc.cli:gsc
+  gsc-record=pygsc.cli:gsc_record
+  gsc-display-keycodes=pygsc.cli:display_keycodes
   ''',
 )
