@@ -1,6 +1,8 @@
 from pathlib import Path
+import logging
 
 from .ScriptRecorder import *
+from .ScriptedSession import *
 
 import click
 
@@ -24,11 +26,25 @@ def make_interactive_shell(shell):
 @click.command(help="Run a shell script interactivly.")
 @click.argument("script",type=click.Path(exists=True))
 @click.option("--shell","-s",help="The shell to use for running the script.")
-def gsc(script,shell):
+@click.option("--debug","-d",is_flag=True,help="Log debug messages.")
+@click.option("--verbose","-v",is_flag=True,help="Log info messages.")
+def gsc(script,shell,debug,verbose):
+
+    logger = logging.getLogger()
+    fh = logging.FileHandler("gsc.log")
+    fmt = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    fh.setFormatter(fmt)
+    logger.addHandler(fh)
+    if verbose:
+      logger.setLevel(logging.INFO)
+    if debug:
+      logger.setLevel(logging.DEBUG)
 
     shell = make_interactive_shell(shell)
     session = ScriptedSession(script,shell)
     session.run()
+    session.cleanup()
+    logger.debug("Session finished")
 
 
 
@@ -41,6 +57,7 @@ def gsc_record(output,shell):
   shell = make_interactive_shell(shell)
   rec = ScriptRecorder(shell)
   rec.run()
+  rec.cleanup()
 
   output.write_bytes(rec.get_bytes())
   print()
@@ -49,50 +66,74 @@ def gsc_record(output,shell):
 
 
 @click.command(help="Display keycodes for keypresses.")
-@click.option("--keypress_driver","-k",is_flag=True,help="Use keypress event driver instead of characters from stdin.")
+@click.option("--keypress-driver","-k",is_flag=True,help="Use keypress event driver instead of characters from stdin.")
 def display_keycodes(keypress_driver):
   import tty, termios, sys, os
-  from pynput.keyboard import Key,Listener
   import collections
 
+  try:
+    from pynput.keyboard import Key,KeyCode,Listener
+    have_pynput = True
+  except:
+    have_pynput = False
+
   
-  if not keypress_driver:
-    saved = termios.tcgetattr(sys.stdin.fileno())
-    tty.setraw(sys.stdin.fileno())
-    while True:
-      input = os.read(sys.stdin.fileno(),1024)
-      print(len(input),'chars',end='\n\r')
-      print("raw:",f"`{input}`",end="\n\r")
-      print("utf-8:",f"`{input.decode('utf-8')}`",end="\n\r")
-      sys.stdout.write("int: ")
-      for c in input:
-        sys.stdout.write(f"{c} ")
-      print(end="\n\r")
-      sys.stdout.write("hex: ")
-      for c in input:
-        sys.stdout.write(f"{hex(c)} ")
-      print(end="\n\r")
-      print(end="\n\r")
-
-      if len(input) == 1 and ord(input) == 4:
-        break
-
-
-    termios.tcsetattr(sys.stdin.fileno(),termios.TCSANOW,saved)
-  else:
+  if keypress_driver:
+    if not have_pynput:
+      print("Could not run keypress-based driver. `pynput` is not installed.")
+      sys.exit(1)
 
     def on_press(key):
       print("stroke: down")
       print("raw:",key)
+      print("type:",type(key))
+      if type(key) == KeyCode:
+        print("dead:",key.is_dead)
+        print("char:",key.char)
+      else:
+        print("val:",key.value)
       print()
 
     def on_release(key):
       print("stroke: up")
       print("raw:",key)
+      print("type:",type(key))
+      if type(key) == KeyCode:
+        print("dead:",key.is_dead)
+        print("char:",key.char)
+      else:
+        print("val:",key.value)
       print()
 
       if key == Key.esc:
         return False
 
-    with Listener(on_press=on_press,on_release=on_release) as listender:
-      listender.join()
+    with Listener(on_press=on_press,on_release=on_release) as listener:
+      listener.join()
+
+    return
+
+
+
+  saved = termios.tcgetattr(sys.stdin.fileno())
+  tty.setraw(sys.stdin.fileno())
+  while True:
+    input = os.read(sys.stdin.fileno(),1024)
+    print(len(input),'chars',end='\n\r')
+    print("raw:",f"`{input}`",end="\n\r")
+    print("utf-8:",f"`{input.decode('utf-8')}`",end="\n\r")
+    sys.stdout.write("int: ")
+    for c in input:
+      sys.stdout.write(f"{c} ")
+    print(end="\n\r")
+    sys.stdout.write("hex: ")
+    for c in input:
+      sys.stdout.write(f"{hex(c)} ")
+    print(end="\n\r")
+    print(end="\n\r")
+
+    if len(input) == 1 and ord(input) == 4:
+      break
+
+
+  termios.tcsetattr(sys.stdin.fileno(),termios.TCSANOW,saved)

@@ -1,7 +1,6 @@
 from pygsc.Script import Script
 import tempfile
-import pytest
-
+import pytest 
 def tmpfile(lines):
   if isinstance(lines,str):
     lines = [lines]

@@ -13,7 +13,7 @@ class ScriptRecorder:
     self.saved_terminal_settings = None
     self.lines = []
 
-  def __del__(self):
+  def cleanup(self):
       try:
         self.terminal.stop()
       except: pass
