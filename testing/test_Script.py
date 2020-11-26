@@ -1,6 +1,7 @@
 from pygsc.Script import Script
 import tempfile
 import pytest 
+
 def tmpfile(lines):
   if isinstance(lines,str):
     lines = [lines]
@@ -12,12 +13,14 @@ def tmpfile(lines):
   return file.name
 
 
-
-def test_looping_through_script():
-
+@pytest.fixture
+def simple_script():
   file = tmpfile(["ls","pwd","date"])
+  return Script(file)
 
-  script = Script(file)
+
+def test_line_iteration(simple_script):
+  script = simple_script
 
   lgen = script.iter_lines()
 
@@ -28,6 +31,20 @@ def test_looping_through_script():
     next(lgen)
 
   script.reset_seek_line()
+
+  lgen = script.iter_lines()
+
+  assert next(lgen) == "ls"
+  assert next(lgen) == "pwd"
+  assert next(lgen) == "date"
+  with pytest.raises(StopIteration):
+    next(lgen)
+
+
+def test_line_seeking(simple_script):
+  script = simple_script
+
+  lgen = script.iter_lines()
 
   lgen = script.iter_lines()
   assert next(lgen) == "ls"
@@ -48,9 +65,10 @@ def test_looping_through_script():
   with pytest.raises(StopIteration):
     next(lgen)
 
-  script.reset_seek()
 
 
+def test_char_iteration(simple_script):
+  script = simple_script
   cgen = script.iter_chars_on_current_line()
 
   assert next(cgen) == "l"
@@ -60,11 +78,15 @@ def test_looping_through_script():
   assert script.eol()
   assert not script.eof()
 
+
+def test_char_seeking(simple_script):
+  script = simple_script
   script.seek_next_line()
-  script.reset_seek_col()
 
   cgen = script.iter_chars_on_current_line()
   assert next(cgen) == "p"
+  assert next(cgen) == "w"
+  script.seek_prev_col()
   assert next(cgen) == "w"
   assert next(cgen) == "d"
   with pytest.raises(StopIteration):
@@ -74,7 +96,6 @@ def test_looping_through_script():
 
 
   script.seek_next_line()
-  script.reset_seek_col()
 
   cgen = script.iter_chars_on_current_line()
   assert next(cgen) == "d"
@@ -96,14 +117,14 @@ def test_looping_through_script():
   assert script.eol()
   assert script.eof()
 
+def test_current_char_with_seeking(simple_script):
+  script = simple_script
 
-
-  script.reset_seek()
   assert script.current_char() == 'l'
   assert script.current_char() == 'l'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.current_char() == 's'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.eol()
   assert not script.eof()
 
@@ -112,26 +133,36 @@ def test_looping_through_script():
   script.seek_next_line()
 
   assert script.current_char() == 'p'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.current_char() == 'w'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.current_char() == 'd'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.eol()
   assert not script.eof()
 
 
 
+  script.seek_next_line(ret=False)
+  assert script.current_char() == 'e'
+  script.seek_prev_col()
+  assert script.current_char() == 't'
+  script.seek_prev_line(ret=False)
+  assert script.current_char() == 'd'
+  script.seek_next_col()
+  assert script.eol()
+  assert not script.eof()
+
   script.seek_next_line()
 
   assert script.current_char() == 'd'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.current_char() == 'a'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.current_char() == 't'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.current_char() == 'e'
-  script.seek_next_char()
+  script.seek_next_col()
   assert script.eol()
   assert script.eof()
 

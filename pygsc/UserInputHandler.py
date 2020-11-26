@@ -1,6 +1,6 @@
 import sys,os
 import termios,tty
-from collections import deque
+from queue import Queue
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,12 +12,9 @@ class UserInputHandler:
     self.chunk_size = 1024
     self.last_read_input = None
     self.filter_input = False
-
-    self.saved_terminal_settings = termios.tcgetattr(self.inputfd)
-    tty.setraw(self.inputfd)
-
-    
     self.filters = []
+    self.queue = Queue()
+
 
   def clear_filters(self):
     self.filters = []
@@ -25,8 +22,6 @@ class UserInputHandler:
   def add_filter( self, f ):
     self.filters.append(f)
 
-  def __del__(self):
-    termios.tcsetattr(self.inputfd, termios.TCSANOW, self.saved_terminal_settings)
 
   def filter(self, input):
     if self.filter_input:
@@ -38,17 +33,29 @@ class UserInputHandler:
 
     return input
 
+  def queue_input(self,input):
+    self.queue.put(input)
+
   def read(self):
-    self.last_read_input= os.read(self.inputfd,self.chunk_size)
+    if self.queue.empty():
+      self.last_read_input = os.read(self.inputfd,self.chunk_size)
+    else:
+      self.last_read_input = self.queue.get()
+
     if logger.isEnabledFor(logging.DEBUG):
       logger.debug(f"read '{self.last_read_input}' ({len(self.last_read_input)} chars)")
 
     return  self.filter(self.last_read_input)
 
-  def get_ord(self):
+  @property
+  def last_read(self):
+    return self.filter(self.last_read_input)
+
+  @property
+  def last_read_ord(self):
     '''Return ordinal for last read input. If no ordinal exists, returns -1'''
     try:
-      return ord(self.filter(self.last_read_input))
+      return ord(self.last_read)
     except:
       return -1
 

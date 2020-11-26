@@ -42,8 +42,10 @@ def gsc(script,shell,debug,verbose):
 
     shell = make_interactive_shell(shell)
     session = ScriptedSession(script,shell)
-    session.run()
-    session.cleanup()
+    try:
+      session.run()
+    finally:
+      session.cleanup()
     logger.debug("Session finished")
 
 

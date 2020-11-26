@@ -32,7 +32,6 @@ class TerminalSession:
     self.shutdown_flag = False
 
     self.slavePID,self.termfd = pty.fork()
-    # tty.setraw(self.termfd)
 
     if self.slavePID == pty.CHILD:
       os.execvp(shell[0], shell)
@@ -84,6 +83,7 @@ class TerminalSession:
     winsz = struct.pack('HHHH',0,0,0,0)
     winsz = fcntl.ioctl(self.STDINFD, termios.TIOCGWINSZ, winsz)
     fcntl.ioctl(self.termfd, termios.TIOCSWINSZ, winsz)
+
 
   
   def set_output_mode(self,mode : OutputMode):

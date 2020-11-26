@@ -35,16 +35,16 @@ class ScriptedSession:
         do with the current script character.
         '''
         input = self.session.input_handler.read()
-        if self.session.input_handler.get_ord() in [127]: # backspace
+        if self.session.input_handler.last_read_ord in [127]: # backspace
           self.session.terminal.send(chr(127))
-          self.session.script.seek_prev_char()
-        elif self.session.input_handler.get_ord() in [4]: # ctl-d
+          self.session.script.seek_prev_col()
+        elif self.session.input_handler.last_read_ord in [4]: # ctl-d
           logger.debug(f"switching modes: insert -> command")
           self.session.mode = self.session.Modes.Command
           return True
         else:
           self.session.terminal.send(self.session.script.current_char())
-          self.session.script.seek_next_char()
+          self.session.script.seek_next_col()
 
         return False
 
@@ -56,17 +56,17 @@ class ScriptedSession:
         '''
         while True:
           input = self.session.input_handler.read().decode('utf-8')
-          if self.session.input_handler.get_ord() in [127]: # backspace
+          if self.session.input_handler.last_read_ord in [127]: # backspace
             self.session.terminal.send(chr(127))
-            self.session.script.seek_prev_char()
+            self.session.script.seek_prev_col()
             return False
 
-          if self.session.input_handler.get_ord() in [4]: # ctl-d
+          if self.session.input_handler.last_read_ord in [4]: # ctl-d
             logger.debug(f"switching modes: insert -> command")
             self.session.mode = self.session.Modes.Command
             return True
 
-          if self.session.input_handler.get_ord() in [13]: # return
+          if self.session.input_handler.last_read_ord in [13]: # return
             self.session.terminal.send('\r')
             self.session.script.seek_next_line()
             return False
@@ -80,15 +80,15 @@ class ScriptedSession:
         '''
         while True:
           input = self.session.input_handler.read().decode('utf-8')
-          if self.session.input_handler.get_ord() in [13]: # return
+          if self.session.input_handler.last_read_ord in [13]: # return
             logger.debug(f"recieved user input {input}. exitting")
             return False
-          elif self.session.input_handler.get_ord() in [4]: # ctl-4
+          elif self.session.input_handler.last_read_ord in [4]: # ctl-4
             logger.debug(f"switching modes: insert -> command")
             self.session.mode = self.session.Modes.Command
             return True
           else:
-            logger.debug(f"recieved user input {input} (ord {self.session.input_handler.get_ord()}), but did not exit")
+            logger.debug(f"recieved user input {input} (ord {self.session.input_handler.last_read_ord}), but did not exit")
 
 
 
@@ -114,6 +114,18 @@ class ScriptedSession:
             logger.debug(f"switching to passthrough mode")
             self.session.mode = self.session.Modes.Passthrough
             return
+          if input in ["h"]:
+            self.session.script.seek_prev_col()
+          if input in ["j"]:
+            self.session.script.seek_next_line(ret=False)
+          if input in ["k"]:
+            self.session.script.seek_prev_line(ret=False)
+          if input in ["l"]:
+            self.session.script.seek_next_col()
+          if input in ["^"]:
+            self.session.script.seek_beg_col()
+          if input in ["$"]:
+            self.session.script.seek_end_col()
 
 
     class PassthroughMode(Mode):
@@ -124,7 +136,7 @@ class ScriptedSession:
         logger.debug("passthrough mode running")
         while True:
           input = self.session.input_handler.read().decode('utf-8')
-          if self.session.input_handler.get_ord() in [4]: # ctl-d
+          if self.session.input_handler.last_read_ord in [4]: # ctl-d
             logger.debug("switching mode: passthruogh -> command")
             self.session.mode = self.session.Modes.Command
             return
@@ -139,6 +151,13 @@ class ScriptedSession:
         self.exit_flag = False
         self.terminal = TerminalSession(self.shell)
         self.saved_terminal_settings = None
+
+        try:
+          self.saved_terminal_settings = termios.tcgetattr(self.STDINFD)
+          tty.setraw(self.STDINFD)
+        except:
+          logging.warning("Could not save terminal state for stdin. This likely means that no terminal is in control.")
+
         self.input_handler = UserInputHandler(self.STDINFD)
 
         self.mode = self.Modes.Insert
@@ -151,11 +170,12 @@ class ScriptedSession:
       except Exception as e:
         logger.debug(f"there was en error: {e}")
 
-      try:
-        logger.debug("trying to restore terminal settings")
-        termios.tcsetattr(self.STDINFD, termios.TCSANOW, self.saved_terminal_settings)
-      except Exception as e:
-        logger.debug(f"there was en error: {e}")
+      if self.saved_terminal_settings is not None:
+        try:
+          logger.debug("trying to restore terminal settings")
+          termios.tcsetattr(self.STDINFD, termios.TCSANOW, self.saved_terminal_settings)
+        except Exception as e:
+          logger.debug(f"there was en error: {e}")
 
 
 

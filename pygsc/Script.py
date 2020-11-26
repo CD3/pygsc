@@ -28,21 +28,30 @@ class Script:
 
     self.lines += lines
 
-  def seek_next_line(self,n=1):
+  def seek_next_line(self,n=1,ret=True):
     self.line += n
-    self.reset_seek_col()
+    if ret:
+      self.reset_seek_col()
 
-  def seek_prev_line(self,n=1):
+  def seek_prev_line(self,n=1,ret=True):
     self.line -= n
     self.line = max(self.line,0)
-    self.reset_seek_col()
+    if ret:
+      self.reset_seek_col()
 
-  def seek_next_char(self,n=1):
+  def seek_next_col(self,n=1):
     self.col += n
+    self.col = min(self.col,len(self.current_line()))
 
-  def seek_prev_char(self,n=1):
+  def seek_prev_col(self,n=1):
     self.col -= n
     self.col = max(self.col,0)
+
+  def seek_end_col(self):
+    self.col = len(self.current_line())
+
+  def seek_beg_col(self):
+    self.col = 0
 
   def iter_lines(self):
     while self.line < len(self.lines):
