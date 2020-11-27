@@ -49,12 +49,23 @@ to press enter before starting the next line in the script.
 
 `ctrl-d`: switch to command mode.
 
+#### Insert Mode
+
+Line mode is special type of insert mode where entire lines are sent to the shell instead of single characters. This mode is useful for
+quickly testing a script.
+
+`return`: send `\r` and load next script line.
+
+`ctrl-d`: switch to command mode.
+
 #### Command Mode
 
 Command mode allows the user to make (simple) adjustments during the demo. The user can move the current character position, for example
 to skip a line or backup.
 
 `i`: switch to insert mode.
+
+`I`: switch to line mode.
 
 `p`: switch to pass-through mode.
 
@@ -72,7 +83,7 @@ to skip a line or backup.
 
 `s`: toggle status line on/off.
 
-#### Pass-hhrough Mode
+#### Pass-through Mode
 
 Pass-through mode sends all user input to the shell. This can be used to fix the current line, fix the environment (remove files that are not supposed to be there),
 or just temporarily take over the demo.

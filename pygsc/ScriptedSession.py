@@ -52,7 +52,7 @@ class ScriptedSession:
 
         cl = cl.strip()[1:].strip()
 
-        if cl.lower() == "passthrough":
+        if cl.lower() == "pass-through":
           self.session.mode = self.session.Modes.Passthrough
           self.session.script.seek_next_line()
           logger.debug(f"switching modes: insert -> pass-through")
@@ -63,7 +63,6 @@ class ScriptedSession:
           self.session.script.seek_next_line()
           logger.debug(f"switching modes: insert -> command")
           return True
-
 
       def handle_script_current_char(self):
         '''
@@ -130,6 +129,20 @@ class ScriptedSession:
             logger.debug(f"recieved user input {input} (ord {self.session.input_handler.last_read_ord}), but did not exit")
 
 
+    class LineMode(InsertMode):
+      def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+
+      def handle_script_current_char(self):
+        '''
+        Overload InserMode single char handler to send entire lines.
+        '''
+        line = self.session.script.current_line()
+        self.session.script.seek_end_col()
+        self.session.terminal.send(line)
+        return False
+
+
 
 
 
@@ -148,6 +161,10 @@ class ScriptedSession:
           if input in ["i"]:
             logger.debug(f"switching modes: command -> insert")
             self.session.mode = self.session.Modes.Insert
+            return
+          if input in ["I"]:
+            logger.debug(f"switching modes: command -> line")
+            self.session.mode = self.session.Modes.Line
             return
           if input in ["p"]:
             logger.debug(f"switching to passthrough mode")
@@ -197,7 +214,7 @@ class ScriptedSession:
 
 
 
-    Modes = Enum("Modes",'Insert Command Passthrough')
+    Modes = Enum("Modes",'Insert Line Command Passthrough')
     def __init__(self, script, shell):
         self.script = Script(script)
         self.shell = shell
@@ -223,8 +240,8 @@ class ScriptedSession:
         self.input_handler = UserInputHandler(self.STDINFD)
 
         self.mode = self.Modes.Insert
-        self.mode_handlers = {self.Modes.Insert:self.InsertMode(self),self.Modes.Command:self.CommandMode(self),self.Modes.Passthrough:self.PassthroughMode(self)}
-        self.mode_status_abbrvs = {self.Modes.Insert:"I",self.Modes.Command:"C",self.Modes.Passthrough:"P"}
+        self.mode_handlers = {self.Modes.Insert:self.InsertMode(self),self.Modes.Line:self.LineMode(self),self.Modes.Command:self.CommandMode(self),self.Modes.Passthrough:self.PassthroughMode(self)}
+        self.mode_status_abbrvs = {self.Modes.Insert:"I",self.Modes.Command:"C",self.Modes.Passthrough:"P",self.Modes.Line:"L"}
 
     def cleanup(self):
       try:
