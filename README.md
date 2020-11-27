@@ -2,6 +2,19 @@
 
 `pygsc` is a Python script that lets you run shell scripts *interactively*. This is useful for doing live command line demos.
 
+`pygsc` is a (another) rewrite of [`gsc`](https://github.com/CD3/gsc). There is a long history with the creation of this tool for a computer class I teach. You can read it
+there.
+
+## Features
+
+- Run shell scripts interactively.
+    - Characters are sent to the shell, on at a time, each time you press a key.
+    - When the end of a line has been reached, press enter to go to the next line.
+- Modal : switch between insert mode, command mode, and pass through mode (see below).
+    - If you run into an error in your script (a typo, or some file that is missing), you can switch to pass-through mode to quickly fix the error without
+      exiting the demo.
+- Statusline in the upper right corner of the terminal lets you know where you are and what mode your in. This can be disabled.
+
 ## Usage
 
 To start a demo, run `gsc` with the script
@@ -56,6 +69,8 @@ to skip a line or backup.
 `^`: jump to the first character in the current script line.
 
 `$`: jump to the end of the current script line (one past the last character).
+
+`s`: toggle status line on/off.
 
 #### Pass-hhrough Mode
 

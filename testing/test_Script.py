@@ -1,4 +1,5 @@
 from pygsc.Script import Script
+from pygsc import ucode
 import tempfile
 import pytest 
 
@@ -7,7 +8,7 @@ def tmpfile(lines):
     lines = [lines]
 
   file = tempfile.NamedTemporaryFile(delete=False)
-  file.write('\n'.join(lines).encode('utf-8'))
+  file.write('\n'.join(lines).encode(ucode))
   file.close()
 
   return file.name

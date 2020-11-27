@@ -1,5 +1,6 @@
 ls
-vim test.txt
+vim -u NONE test.txt
+
 aThis is a text file!
 Line two here
 

@@ -3,6 +3,7 @@ import logging
 
 from .ScriptRecorder import *
 from .ScriptedSession import *
+from . import ucode
 
 import click
 
@@ -28,7 +29,8 @@ def make_interactive_shell(shell):
 @click.option("--shell","-s",help="The shell to use for running the script.")
 @click.option("--debug","-d",is_flag=True,help="Log debug messages.")
 @click.option("--verbose","-v",is_flag=True,help="Log info messages.")
-def gsc(script,shell,debug,verbose):
+@click.option("--no-statusline/--statusline",help="Log info messages.")
+def gsc(script,shell,debug,verbose,no_statusline):
 
     logger = logging.getLogger()
     fh = logging.FileHandler("gsc.log")
@@ -42,6 +44,7 @@ def gsc(script,shell,debug,verbose):
 
     shell = make_interactive_shell(shell)
     session = ScriptedSession(script,shell)
+    session.set_statusline(not no_statusline)
     try:
       session.run()
     finally:
@@ -123,7 +126,7 @@ def display_keycodes(keypress_driver):
     input = os.read(sys.stdin.fileno(),1024)
     print(len(input),'chars',end='\n\r')
     print("raw:",f"`{input}`",end="\n\r")
-    print("utf-8:",f"`{input.decode('utf-8')}`",end="\n\r")
+    print("unicod:",f"`{input.decode(ucode)}`",end="\n\r")
     sys.stdout.write("int: ")
     for c in input:
       sys.stdout.write(f"{c} ")

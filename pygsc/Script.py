@@ -30,6 +30,7 @@ class Script:
 
   def seek_next_line(self,n=1,ret=True):
     self.line += n
+    self.line = min(self.line,len(self.lines))
     if ret:
       self.reset_seek_col()
 
@@ -41,14 +42,14 @@ class Script:
 
   def seek_next_col(self,n=1):
     self.col += n
-    self.col = min(self.col,len(self.current_line()))
+    self.col = min(self.col,len(self.current_line("")))
 
   def seek_prev_col(self,n=1):
     self.col -= n
     self.col = max(self.col,0)
 
   def seek_end_col(self):
-    self.col = len(self.current_line())
+    self.col = len(self.current_line(""))
 
   def seek_beg_col(self):
     self.col = 0
@@ -65,7 +66,10 @@ class Script:
 
 
 
-  def current_line(self):
+  def current_line(self,return_on_out_of_range=None):
+    N = len(self.lines)
+    if self.line >= N or self.line < 0:
+      return return_on_out_of_range
     return self.lines[self.line]
 
   def current_char(self):

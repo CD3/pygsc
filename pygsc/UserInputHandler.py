@@ -13,6 +13,7 @@ class UserInputHandler:
     self.last_read_input = None
     self.filter_input = False
     self.filters = []
+    self.callbacks = []
     self.queue = Queue()
 
 
@@ -21,6 +22,9 @@ class UserInputHandler:
 
   def add_filter( self, f ):
     self.filters.append(f)
+
+  def add_callback( self, c ):
+    self.callbacks.append(c)
 
 
   def filter(self, input):
@@ -33,6 +37,10 @@ class UserInputHandler:
 
     return input
 
+  def run_callbacks(self):
+    for c in self.callbacks:
+      c()
+
   def queue_input(self,input):
     self.queue.put(input)
 
@@ -44,6 +52,8 @@ class UserInputHandler:
 
     if logger.isEnabledFor(logging.DEBUG):
       logger.debug(f"read '{self.last_read_input}' ({len(self.last_read_input)} chars)")
+
+    self.run_callbacks()
 
     return  self.filter(self.last_read_input)
 

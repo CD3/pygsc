@@ -13,6 +13,7 @@ import fcntl
 import struct
 from queue import Queue
 from enum import Enum
+from . import ucode
 
 
 
@@ -42,7 +43,11 @@ class TerminalSession:
     self.terminal_output_thread = threading.Thread(target=self._process_terminal_output)
     self.terminal_output_thread.start()
 
+    self.output_callbacks = []
 
+
+  def add_output_callback(self,f):
+    self.output_callbacks.append(f)
 
 
   def _process_terminal_output(self):
@@ -66,6 +71,9 @@ class TerminalSession:
 
           if self.output_mode == TerminalSession.OutputMode.Pause:
             stash.put(c)
+
+          for f in self.output_callbacks:
+            f(c)
             
 
   def stop(self):
@@ -76,7 +84,7 @@ class TerminalSession:
 
   def send(self,c : str):
     if not isinstance(c,bytes):
-      c = c.encode('utf-8')
+      c = c.encode(ucode)
     os.write(self.termfd,c)
 
   def sync_windows_size(self):
