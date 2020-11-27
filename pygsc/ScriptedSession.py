@@ -14,7 +14,6 @@ except:
 logger = logging.getLogger(__name__)
 
 class ScriptedSession:
-    
 
 
     class Mode:
@@ -28,6 +27,7 @@ class ScriptedSession:
       def run(self):
         logger.debug("entering insert mode")
         while not self.session.script.eof():
+          if self.handle_script_line(): return
           while not self.session.script.eol():
             if self.handle_script_current_char(): return
             self.session.update_statusline()
@@ -37,6 +37,33 @@ class ScriptedSession:
         self.session.update_statusline()
 
         self.session.exit_flag = True
+
+      def handle_script_line(self):
+        '''
+        Look at current script line and
+        take any actions necessary.
+        '''
+        cl = self.session.script.current_line()
+        if cl is None:
+          return False
+
+        if not cl.strip().startswith('#'):
+          return False
+
+        cl = cl.strip()[1:].strip()
+
+        if cl.lower() == "passthrough":
+          self.session.mode = self.session.Modes.Passthrough
+          self.session.script.seek_next_line()
+          logger.debug(f"switching modes: insert -> pass-through")
+          return True
+
+        if cl.lower() == "command":
+          self.session.mode = self.session.Modes.Command
+          self.session.script.seek_next_line()
+          logger.debug(f"switching modes: insert -> command")
+          return True
+
 
       def handle_script_current_char(self):
         '''
