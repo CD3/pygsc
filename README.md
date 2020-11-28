@@ -7,9 +7,10 @@ there.
 
 ## Features
 
-- Run shell scripts interactively.
+- Run shell scripts "interactively".
     - Characters are sent to the shell, on at a time, each time you press a key.
     - When the end of a line has been reached, press enter to go to the next line.
+- Script *any* command line application: vim, gnuplot, ssh, etc.
 - Modal : switch between insert mode, command mode, and pass through mode (see below).
     - If you run into an error in your script (a typo, or some file that is missing), you can switch to pass-through mode to quickly fix the error without
       exiting the demo.
