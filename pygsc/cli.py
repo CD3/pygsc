@@ -27,7 +27,7 @@ def make_interactive_shell(shell):
 @click.option("--shell","-s",help="The shell to use for running the script.")
 @click.option("--debug","-d",is_flag=True,help="Log debug messages.")
 @click.option("--verbose","-v",is_flag=True,help="Log info messages.")
-@click.option("--no-statusline/--statusline",help="disable/enable status line. status line is enabled by default.")
+@click.option("--no-statusline/--statusline",help="disable/enable status line (the statusline may interfere with some full screen applications, such as vim). status line is enabled by default.")
 @click.option("--line-mode","-l",is_flag=True,help="Start script in line mode.")
 @click.option("--startup-command", multiple=True, help="Send TEXT to the terminal before starting input (a \\r will be appended). May be given multiple times.")
 def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command):

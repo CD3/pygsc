@@ -71,6 +71,14 @@ class ScriptedSession:
             self.session.mode_handlers[self.session.mode].run()
             self.session.mode = self.session.Modes.Insert
 
+        if cl.startswith("statusline:"):
+          toks = cl.split()
+          if toks[-1] == "off":
+            self.session.set_statusline(False)
+          else:
+            self.session.set_statusline(True)
+          self.session.script.seek_next_line()
+
       def handle_script_current_char(self):
         '''
         Read input from user and decide what to
