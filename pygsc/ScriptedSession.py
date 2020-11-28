@@ -1,6 +1,7 @@
 from .Script import *
 from .TerminalSession import *
 from .UserInputHandler import *
+from .CommandParser import *
 from . import ucode
 import sys,tty,string
 import enum
@@ -46,37 +47,38 @@ class ScriptedSession:
         cl = self.session.script.current_line()
         if cl is None:
           return False
-
-        if not cl.strip().startswith('#'):
+        res = self.session.command_parser.parse(cl)
+        if res is None:
           return False
 
-        cl = cl.strip()[1:].strip()
+        if res['name'] == "comment":
+          return False
 
-        if cl.lower() == "pass-through":
+
+
+        if res['name'] == "passthrough":
           self.session.mode = self.session.Modes.Passthrough
           self.session.script.seek_next_line()
           logger.debug(f"switching modes: insert -> pass-through")
           return True
 
-        if cl.lower() == "command":
-          self.session.mode = self.session.Modes.Command
-          self.session.script.seek_next_line()
-          logger.debug(f"switching modes: insert -> command")
-          return True
-
-        if cl.lower() == "temporary pass-through":
+        if res['name'] == "temporary passthrough":
             logger.debug(f"temporarily switching to pass-through mode")
             self.session.mode = self.session.Modes.TemporaryPassthrough
             self.session.script.seek_next_line()
             self.session.mode_handlers[self.session.mode].run()
             self.session.mode = self.session.Modes.Insert
 
-        if cl.startswith("statusline:"):
-          toks = cl.split()
-          if toks[-1] == "off":
-            self.session.set_statusline(False)
-          else:
+        if res['name'] == "statusline":
+          if len(res['args']) < 1:
             self.session.set_statusline(True)
+          else:
+            if res['args'][0].lower() in ["off","false","0","disable"]:
+              self.session.set_statusline(False)
+            elif res['args'][0].lower() in ["on","true","1","enable"]:
+              self.session.set_statusline(True)
+            else:
+              logger.error(f"Unrecognized value '{res['args'][0]}' in statusline command. Ignoring.")
           self.session.script.seek_next_line()
 
       def handle_script_current_char(self):
@@ -263,6 +265,16 @@ class ScriptedSession:
         self.terminal = TerminalSession(self.shell)
         self.terminal.add_output_callback( lambda c: self.update_statusline() )
         self.saved_terminal_settings = None
+        self.command_parser = CommandParser()
+
+        self.command_parser.add_command("passthrough", ['pass-through','pass'])
+        self.command_parser.add_command("temporary passthrough",['temporary pass-through', 'temp pass'])
+        self.command_parser.add_command("line")
+        self.command_parser.add_command("mode")
+        self.command_parser.add_command("statusline")
+        self.command_parser.add_command("stdout")
+        self.command_parser.add_command("pause")
+        self.command_parser.add_command("comment")
 
         if have_blessings:
           self.bterm = blessings.Terminal()
