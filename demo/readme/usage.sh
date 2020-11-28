@@ -1,12 +1,15 @@
-echo "characters are sent to the shell one at a time as you type. to load a new line, press return."
+echo "Characters are sent to the shell one at a time as you type. To load a new line, press return."
 ls
 vim demo.txt
 
-aterminal applications like vim, gnuplot, or remote ssh connections can all be scripted
+aterminal applications like vim, gnuplot,
+even remote ssh connections can all be scripted.
 
 :wq
 ls
 cat demo.txt
+rm demo.txt
+ls
 gnuplot
 plot sin(x)
 exit
