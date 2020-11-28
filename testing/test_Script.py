@@ -1,17 +1,7 @@
 from pygsc.Script import Script
 from pygsc import ucode
-import tempfile
 import pytest 
-
-def tmpfile(lines):
-  if isinstance(lines,str):
-    lines = [lines]
-
-  file = tempfile.NamedTemporaryFile(delete=False)
-  file.write('\n'.join(lines).encode(ucode))
-  file.close()
-
-  return file.name
+from utils import tmpfile
 
 
 @pytest.fixture

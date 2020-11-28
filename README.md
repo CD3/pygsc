@@ -54,7 +54,7 @@ to press enter before starting the next line in the script.
 Line mode is special type of insert mode where entire lines are sent to the shell instead of single characters. This mode is useful for
 quickly testing a script.
 
-`return`: send `\r` and load next script line.
+`return`: send `\r` to shell and load next script line.
 
 `ctrl-d`: switch to command mode.
 
@@ -89,3 +89,9 @@ Pass-through mode sends all user input to the shell. This can be used to fix the
 or just temporarily take over the demo.
 
 `ctrl-d`: switch to command mode.
+
+#### Temporary Pass-through Mode
+
+Temporary Pass-through mode is a special version of pass-through mode that exits as soon as the user pressed return. It is useful for allowing the user to insert a password.
+
+`return`: send `\r` to shell and switch back to previous mode.

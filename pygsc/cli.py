@@ -1,5 +1,6 @@
 from pathlib import Path
 import logging
+import time
 
 from .ScriptRecorder import *
 from .ScriptedSession import *
@@ -18,9 +19,6 @@ def make_interactive_shell(shell):
     if shell[0] is None:
       raise click.RuntimeError("Could not find working shell for '{oshell}'. Check that it is in your path.")
 
-    if Path(shell[0]).name in ['bash','zsh']:
-      shell.append("-i")
-
     return shell
 
 
@@ -31,28 +29,37 @@ def make_interactive_shell(shell):
 @click.option("--verbose","-v",is_flag=True,help="Log info messages.")
 @click.option("--no-statusline/--statusline",help="disable/enable status line. status line is enabled by default.")
 @click.option("--line-mode","-l",is_flag=True,help="Start script in line mode.")
-def gsc(script,shell,debug,verbose,no_statusline,line_mode):
+@click.option("--startup-command", multiple=True, help="Send TEXT to the terminal before starting input (a \\r will be appended). May be given multiple times.")
+def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command):
 
-    logger = logging.getLogger()
-    fh = logging.FileHandler("gsc.log")
-    fmt = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    fh.setFormatter(fmt)
-    logger.addHandler(fh)
-    if verbose:
-      logger.setLevel(logging.INFO)
-    if debug:
-      logger.setLevel(logging.DEBUG)
+    logger = None
+    if verbose or debug:
+      logger = logging.getLogger()
+      fh = logging.FileHandler("gsc.log")
+      fmt = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+      fh.setFormatter(fmt)
+      logger.addHandler(fh)
+      if verbose:
+        logger.setLevel(logging.INFO)
+      if debug:
+        logger.setLevel(logging.DEBUG)
 
     shell = make_interactive_shell(shell)
+    if logger:
+      logger.debug(f"Shell: {shell}")
     session = ScriptedSession(script,shell)
     session.set_statusline(not no_statusline)
     if line_mode:
       session.mode = session.Modes.Line
     try:
+      for command in startup_command:
+        session.send_to_terminal(command+"\r")
       session.run()
     finally:
       session.cleanup()
-    logger.debug("Session finished")
+
+    if logger:
+      logger.debug("Session finished")
 
 
 

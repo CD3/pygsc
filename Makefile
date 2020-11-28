@@ -9,7 +9,7 @@ upload-package:
 
 _dev-install-virtualenv:
 	virtualenv _dev-install-virtualenv
-	. _dev-install-virtualenv/bin/activate && pip install pytest cram
+	. _dev-install-virtualenv/bin/activate && pip install pytest cram pexpect
 	. _dev-install-virtualenv/bin/activate && pip install -e .
 
 dev-install: _dev-install-virtualenv
@@ -25,7 +25,7 @@ run-cli_tests:
 
 _test-install-virtualenv:
 	virtualenv _test-install-virtualenv
-	. _test-install-virtualenv/bin/activate && pip install pytest cram
+	. _test-install-virtualenv/bin/activate && pip install pytest cram pexpect
 	. _test-install-virtualenv/bin/activate && pip install .
 
 test-install: _test-install-virtualenv

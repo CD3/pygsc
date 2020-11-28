@@ -64,6 +64,13 @@ class ScriptedSession:
           logger.debug(f"switching modes: insert -> command")
           return True
 
+        if cl.lower() == "temporary pass-through":
+            logger.debug(f"temporarily switching to pass-through mode")
+            self.session.mode = self.session.Modes.TemporaryPassthrough
+            self.session.script.seek_next_line()
+            self.session.mode_handlers[self.session.mode].run()
+            self.session.mode = self.session.Modes.Insert
+
       def handle_script_current_char(self):
         '''
         Read input from user and decide what to
@@ -102,6 +109,10 @@ class ScriptedSession:
           if self.session.input_handler.last_read_ord in [4]: # ctl-d
             logger.debug(f"switching modes: insert -> command")
             self.session.mode = self.session.Modes.Command
+            return True
+
+          if self.session.input_handler.last_read_ord in [3]: # ctl-c
+            self.session.exit_flag = True
             return True
 
           if self.session.input_handler.last_read_ord in [13]: # return
@@ -167,9 +178,14 @@ class ScriptedSession:
             self.session.mode = self.session.Modes.Line
             return
           if input in ["p"]:
-            logger.debug(f"switching to passthrough mode")
+            logger.debug(f"switching to pass-through mode")
             self.session.mode = self.session.Modes.Passthrough
             return
+          if input in ["P"]:
+            logger.debug(f"temporarily switching to pass-through mode")
+            self.session.mode = self.session.Modes.TemporaryPassthrough
+            self.session.mode_handlers[self.session.mode].run()
+            self.session.mode = self.session.Modes.Command
           if input in ["q"]:
             self.session.exit_flag = True
             return
@@ -197,24 +213,39 @@ class ScriptedSession:
         super().__init__(*args,**kwargs)
 
       def run(self):
-        logger.debug("passthrough mode running")
+        logger.debug("entering pass-through mode")
+        self.session.update_statusline()
         while True:
           input = self.session.input_handler.read().decode(ucode)
           if self.session.input_handler.last_read_ord in [4]: # ctl-d
-            logger.debug("switching mode: passthruogh -> command")
+            logger.debug("switching mode: pass-through -> command")
             self.session.mode = self.session.Modes.Command
             return
           self.session.terminal.send(input)
           self.session.update_statusline()
 
 
+    class TemporaryPassthroughMode(Mode):
+      def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+
+      def run(self):
+        logger.debug("entering temporary pass-through mode")
+        self.session.update_statusline()
+        while True:
+          input = self.session.input_handler.read().decode(ucode)
+          self.session.terminal.send(input)
+          self.session.update_statusline()
+          if self.session.input_handler.last_read_ord in [13]: # return
+            logger.debug("exiting temporary pass-through mode")
+            return
 
 
 
 
 
 
-    Modes = Enum("Modes",'Insert Line Command Passthrough')
+    Modes = Enum("Modes",'Insert Line Command Passthrough TemporaryPassthrough')
     def __init__(self, script, shell):
         self.script = Script(script)
         self.shell = shell
@@ -240,8 +271,17 @@ class ScriptedSession:
         self.input_handler = UserInputHandler(self.STDINFD)
 
         self.mode = self.Modes.Insert
-        self.mode_handlers = {self.Modes.Insert:self.InsertMode(self),self.Modes.Line:self.LineMode(self),self.Modes.Command:self.CommandMode(self),self.Modes.Passthrough:self.PassthroughMode(self)}
-        self.mode_status_abbrvs = {self.Modes.Insert:"I",self.Modes.Command:"C",self.Modes.Passthrough:"P",self.Modes.Line:"L"}
+        self.mode_handlers = {self.Modes.Insert:self.InsertMode(self),
+                              self.Modes.Line:self.LineMode(self),
+                              self.Modes.Command:self.CommandMode(self),
+                              self.Modes.Passthrough:self.PassthroughMode(self),
+                              self.Modes.TemporaryPassthrough:self.TemporaryPassthroughMode(self),
+                              }
+        self.mode_status_abbrvs = {self.Modes.Insert:"I",
+                                   self.Modes.Command:"C",
+                                   self.Modes.Passthrough:"P",
+                                   self.Modes.TemporaryPassthrough:"T",
+                                   self.Modes.Line:"L"}
 
     def cleanup(self):
       try:
@@ -257,6 +297,18 @@ class ScriptedSession:
         except Exception as e:
           logger.debug(f"there was en error: {e}")
 
+
+    def send_to_terminal(self,text):
+      self.terminal.send(text)
+
+    def disable_terminal_output(self):
+      self.terminal.set_output_mode(self.terminal.OutputMode.Drop)
+
+    def enable_terminal_output(self):
+      self.terminal.set_output_mode(self.terminal.OutputMode.Print)
+
+    def set_terminal_output_mode(self,mode):
+      self.terminal.set_output_mode(mode)
 
 
     def run(self):
