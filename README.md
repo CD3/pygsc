@@ -2,6 +2,8 @@
 
 `pygsc` is a Python script that lets you run shell scripts *interactively*. This is useful for doing live command line demos.
 
+![Basic Demo](./demo/gsc-basic-demo.gif)
+
 `pygsc` is a (another) rewrite of [`gsc`](https://github.com/CD3/gsc). There is a long history with the creation of this tool for a computer class I teach. You can read it
 there.
 
