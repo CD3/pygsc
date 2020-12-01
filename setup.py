@@ -19,5 +19,7 @@ setup(
   gsc=pygsc.cli:gsc
   gsc-record=pygsc.cli:gsc_record
   gsc-display-keycodes=pygsc.cli:display_keycodes
+  gsc-monitor=pygsc.cli:gsc_monitor
+  gsc-monitor-test-server=pygsc.cli:gsc_monitor_test_server
   ''',
 )

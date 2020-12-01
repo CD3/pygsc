@@ -4,6 +4,8 @@ import time
 
 from .ScriptRecorder import *
 from .ScriptedSession import *
+from .MonitorServer import *
+from .MonitorClient import *
 from . import ucode
 
 import click
@@ -152,3 +154,31 @@ def display_keycodes(keypress_driver):
 
 
   termios.tcsetattr(sys.stdin.fileno(),termios.TCSANOW,saved)
+
+
+@click.command(help="A gsc monitor client to status information about the current gsc session.")
+@click.option("--remote-hostname","-r",default='localhost',help="The remote server (running gsc) hostname.")
+@click.option("--local-hostname","-l",default='localhost',help="The local server (running gsc-monitor) hostname.")
+@click.option("--port","-p",help="Specify the (local) port to use for communicating with gsc session.")
+def gsc_monitor(remote_hostname,local_hostname,port):
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO)
+  ch = logging.StreamHandler()
+  logger.addHandler(ch)
+  port_range = (3001,3020)
+  if port:
+    port_range = (port,port)
+
+  client = MonitorClient(remote_hostname,local_hostname,port_range)
+  client.start()
+
+@click.command(help="Run a gsc monitor server to test gsc monitor clients.")
+@click.option("--local-hostname","-l",default="localhost",help="The server hostname.")
+@click.option("--port","-p",default=3000,help="Specify the (local) port to lisiten for new clients on.")
+def gsc_monitor_test_server(local_hostname,port):
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO)
+  ch = logging.StreamHandler()
+  logger.addHandler(ch)
+  server = MonitorServer(local_hostname,port)
+  server.start()
