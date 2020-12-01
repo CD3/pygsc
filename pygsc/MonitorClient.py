@@ -7,6 +7,10 @@ class MonitorClient:
     self.local_hostname = local_hostname
     self.port_range = port_range
     self.exit = False
+    self.slots = []
+
+  def add_slot(self,f):
+    self.slots.append(f)
 
   def start(self):
     # we need to:
@@ -35,9 +39,7 @@ class MonitorClient:
 
           # process messages from server
           connection,gsc_address = s.accept()
-          while True:
+          while not self.exit:
             data = connection.recv(1024)
-            if len(data) >  0:
-              print(f"recieved '{data}'")
-            else:
-              break
+            for slot in self.slots:
+              slot(data)

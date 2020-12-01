@@ -2,6 +2,8 @@ from pathlib import Path
 import logging
 import time
 import os,sys
+import select
+
 
 from .ScriptRecorder import *
 from .ScriptedSession import *
@@ -33,7 +35,8 @@ def make_interactive_shell(shell):
 @click.option("--no-statusline/--statusline",help="disable/enable status line (the statusline may interfere with some full screen applications, such as vim). status line is enabled by default.")
 @click.option("--line-mode","-l",is_flag=True,help="Start script in line mode.")
 @click.option("--startup-command", multiple=True, help="Send TEXT to the terminal before starting input (a \\r will be appended). May be given multiple times.")
-def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command):
+@click.option("--monitor/--no-monitor", multiple=True, help="Run a server to send status information to gsc monitor clients (such as gsc-monitor).")
+def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monitor):
 
     logger = None
     if verbose or debug:
@@ -52,6 +55,7 @@ def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command):
       logger.debug(f"Shell: {shell}")
     session = ScriptedSession(script,shell)
     session.set_statusline(not no_statusline)
+    session.set_monitor(monitor)
     if line_mode:
       session.mode = session.Modes.Line
     try:
@@ -170,8 +174,42 @@ def gsc_monitor(remote_hostname,local_hostname,port):
   if port:
     port_range = (port,port)
 
-  client = MonitorClient(remote_hostname,local_hostname,port_range)
-  client.start()
+
+
+  try:
+    import urwid
+  except:
+    print("ERROR: could not import 'urwid' module. Please install it and try again.")
+    sys.exit(1)
+
+
+  # gsc_monitor = MonitorClient(remote_hostname,local_hostname,port_range)
+  # gsc_monitor.add_slot(lambda data: print(data))
+
+
+  header = urwid.Text("gsc-monitor")
+  pile = urwid.Pile([
+    urwid.Filler( header, 'top' ),
+    ])
+
+  def handle_input(char):
+    if char in ('q','Q'):
+      raise urwid.ExitMainLoop()
+    else:
+      print(char)
+
+  loop = urwid.MainLoop(pile,unhandled_input=handle_input)
+  # loop.watch_file(monitor,file_handler)
+  # loop.set_alarm_in(0.1,poll,None)
+  
+  # gsc_monitor.start()
+  loop.run()
+
+
+
+
+
+
 
 @click.command(help="Run a gsc monitor server to test gsc monitor clients.")
 @click.option("--local-hostname","-l",default="localhost",help="The server hostname.")
@@ -183,5 +221,13 @@ def gsc_monitor_test_server(local_hostname,port):
   logger.addHandler(ch)
   server = MonitorServer(local_hostname,port)
   server.start()
-  input("Press enter to shutdown: ")
+  print("Press enter to shutdown:")
+  exit = False
+  while not exit:
+    ready = select.select([sys.stdin],[],[],1)[0]
+    if ready:
+      exit = True
+    else:
+      server.broadcast_message({'desc':'test message'})
+
   server.shutdown()

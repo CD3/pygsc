@@ -3,6 +3,7 @@ import socketserver
 import threading
 import time
 import logging
+import json
 logger = logging.getLogger(__name__)
 
 
@@ -33,9 +34,15 @@ class MonitorServer:
         server.serve_forever()
 
   def broadcast_message(self,message):
+    if not isinstance(message,(str,bytes)):
+      message = json.dumps(message)
+
+    if not isinstance(message,bytes):
+      message = message.encode('utf-8')
     live_connections = []
     for client in self.connections:
       try:
+        client.sendall(message)
         live_connections.append(client)
       except BrokenPipeError:
         pass

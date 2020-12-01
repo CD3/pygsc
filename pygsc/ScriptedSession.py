@@ -306,6 +306,9 @@ class ScriptedSession:
 
 
         self.monitor_server = None
+        self.monitor_server_flag = False
+        self.monitor_server_hostname = "localhost"
+        self.monitor_server_port = 3000
 
     def cleanup(self):
       try:
@@ -336,10 +339,13 @@ class ScriptedSession:
 
 
     def run(self):
+      if self.monitor_server_flag:
+        self.start_monitor_server()
       while not self.exit_flag:
         self.update_statusline()
         self.mode_handlers[self.mode].run()
 
+      self.stop_monitor_server()
       logger.debug("Exiting session")
 
 
@@ -361,14 +367,32 @@ class ScriptedSession:
         if self.bterm is not None:
           t = self.bterm
           os.write( self.terminal.STDOUTFD, (t.save() + t.move(0,t.width-len(sline)) + sline + t.restore()).encode(ucode) )
+
+      if self.monitor_server:
+        self.send_state_to_monitors()
+
       
+    def set_monitor(self,flag):
+      self.monitor_server_flag = flag
+    def toggle_monitor(self):
+      self.monitor_server_flag = not self.monitor_server_flag
 
-    def start_monitor_server(self, hostname, port):
-      self.monitor_server = MonitorServer(hostname,port)
-
+    def start_monitor_server(self):
+      self.monitor_server = MonitorServer(self.monitor_server_hostname,self.monitor_server_port)
+      self.monitor_server.start()
 
     def stop_monitor_server(self):
-      pass
+      if self.monitor_server:
+        self.monitor_server.shutdown()
+        self.monitor_server = None
+
+    def send_state_to_monitors(self):
+      state = {'mode':str(self.mode),
+          'pos': (self.script.line + 1,  self.script.col + 1),
+          'lines': self.script.lines
+          }
+      self.monitor_server.broadcast_message(state)
+
 
 
 
