@@ -1,6 +1,7 @@
 from pathlib import Path
 import logging
 import time
+import os,sys
 
 from .ScriptRecorder import *
 from .ScriptedSession import *
@@ -182,3 +183,5 @@ def gsc_monitor_test_server(local_hostname,port):
   logger.addHandler(ch)
   server = MonitorServer(local_hostname,port)
   server.start()
+  input("Press enter to shutdown: ")
+  server.shutdown()

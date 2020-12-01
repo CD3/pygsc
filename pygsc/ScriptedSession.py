@@ -2,6 +2,7 @@ from .Script import *
 from .TerminalSession import *
 from .UserInputHandler import *
 from .CommandParser import *
+from .MonitorServer import *
 from . import ucode
 import sys,tty,string
 import enum
@@ -303,6 +304,9 @@ class ScriptedSession:
                                    self.Modes.TemporaryPassthrough:"T",
                                    self.Modes.Line:"L"}
 
+
+        self.monitor_server = None
+
     def cleanup(self):
       try:
         logger.debug("trying to stop terminal session")
@@ -359,6 +363,12 @@ class ScriptedSession:
           os.write( self.terminal.STDOUTFD, (t.save() + t.move(0,t.width-len(sline)) + sline + t.restore()).encode(ucode) )
       
 
+    def start_monitor_server(self, hostname, port):
+      self.monitor_server = MonitorServer(hostname,port)
+
+
+    def stop_monitor_server(self):
+      pass
 
 
 

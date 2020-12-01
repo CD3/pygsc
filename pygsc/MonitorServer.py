@@ -13,6 +13,8 @@ class MonitorServer:
     self.connections = []
     self.local_hostname = local_hostname
     self.port = port
+    self.server = None
+    self.listener_thread = None
 
   def listen_for_new_clients(self):
     ms = self
@@ -27,10 +29,8 @@ class MonitorServer:
 
     logger.info(f"Setting up TCP server to listed for client connections on port {self.port} as {self.local_hostname}.")
     with socketserver.TCPServer((self.local_hostname, self.port), NewClientHandler) as server:
+        self.server = server
         server.serve_forever()
-
-  def check_connections(self,message):
-    for client in self.connections:
 
   def broadcast_message(self,message):
     live_connections = []
@@ -43,6 +43,13 @@ class MonitorServer:
 
 
   def start(self):
-    client_listener = threading.Thread(target=self.listen_for_new_clients)
-    client_listener.start()
-    client_listener.join()
+    self.listener_thread = threading.Thread(target=self.listen_for_new_clients)
+    self.listener_thread.start()
+
+  def shutdown(self):
+    if self.server:
+      self.server.shutdown()
+      self.server = None
+    if self.listener_thread:
+      self.listener_thread.join()
+      self.listener_thread = None
