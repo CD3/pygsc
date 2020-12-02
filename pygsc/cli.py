@@ -207,7 +207,11 @@ def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
 
   def message_handler():
     message = os.read(piper,8096)
-    state = json.loads(message.decode('utf-8'))
+    try:
+      state = json.loads(message.decode('utf-8'))
+    except:
+      logger.error("Could not decode message: {message}")
+      return
     l,c = state['pos']
     completed_lines = '\n'.join(state['lines'][0:l])+'\n'
     current_line_completed_chars = state['lines'][l][:c]
