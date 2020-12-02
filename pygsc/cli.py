@@ -1,6 +1,8 @@
 from pathlib import Path
 import logging
+import threading
 import time
+import json
 import os,sys
 import select
 
@@ -165,11 +167,21 @@ def display_keycodes(keypress_driver):
 @click.option("--remote-hostname","-r",default='localhost',help="The remote server (running gsc) hostname.")
 @click.option("--local-hostname","-l",default='localhost',help="The local server (running gsc-monitor) hostname.")
 @click.option("--port","-p",help="Specify the (local) port to use for communicating with gsc session.")
-def gsc_monitor(remote_hostname,local_hostname,port):
-  logger = logging.getLogger()
-  logger.setLevel(logging.INFO)
-  ch = logging.StreamHandler()
-  logger.addHandler(ch)
+@click.option("--debug","-d",is_flag=True,help="Log debug messages.")
+@click.option("--verbose","-v",is_flag=True,help="Log info messages.")
+def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
+  logger = None
+  if verbose or debug:
+    logger = logging.getLogger()
+    fh = logging.FileHandler("gsc-monitor.log")
+    fmt = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    fh.setFormatter(fmt)
+    logger.addHandler(fh)
+    if verbose:
+      logger.setLevel(logging.INFO)
+    if debug:
+      logger.setLevel(logging.DEBUG)
+
   port_range = (3001,3020)
   if port:
     port_range = (port,port)
@@ -183,30 +195,84 @@ def gsc_monitor(remote_hostname,local_hostname,port):
     sys.exit(1)
 
 
-  # gsc_monitor = MonitorClient(remote_hostname,local_hostname,port_range)
-  # gsc_monitor.add_slot(lambda data: print(data))
+  piper,pipew = os.pipe()
+  gsc_monitor = MonitorClient(remote_hostname,local_hostname,port_range)
+  gsc_monitor.add_slot(lambda data: os.write(pipew,data))
 
 
-  header = urwid.Text("gsc-monitor")
-  pile = urwid.Pile([
-    urwid.Filler( header, 'top' ),
-    ])
 
   def handle_input(char):
     if char in ('q','Q'):
       raise urwid.ExitMainLoop()
-    else:
-      print(char)
 
-  loop = urwid.MainLoop(pile,unhandled_input=handle_input)
-  # loop.watch_file(monitor,file_handler)
+  def message_handler():
+    message = os.read(piper,8096)
+    state = json.loads(message.decode('utf-8'))
+    l,c = state['pos']
+    completed_lines = '\n'.join(state['lines'][0:l])+'\n'
+    current_line_completed_chars = state['lines'][l][:c]
+    current_line_upcomming_chars = state['lines'][l][c:]+'\n'
+    upcomming_lines = '\n'.join(state['lines'][l+1:])+'\n'
+    text = []
+    text.append( ('dg',completed_lines) )
+    text.append( ('dr',current_line_completed_chars) )
+    text.append( ('lr',current_line_upcomming_chars) )
+    text.append( ('lg',upcomming_lines) )
+    body.set_text(text)
+
+
+  # print(urwid.get_all_fonts())
+  body = urwid.Text("")
+  main_frame = urwid.Frame(body=urwid.Filler(body), header=urwid.Text("gsc Monitor"))
+
+
+  palette = [
+      ('divider','','','','g27','#a06'),
+      ('lg','light gray','default'),
+      ('dg','dark gray','default'),
+      ('dr','dark red','default'),
+      ('lr','light red','default'),
+      ]
+  loop = urwid.MainLoop(main_frame,palette=palette,unhandled_input=handle_input)
+  loop.watch_file(piper,message_handler)
   # loop.set_alarm_in(0.1,poll,None)
   
-  # gsc_monitor.start()
+  client_thread = threading.Thread(target=gsc_monitor.start)
+  client_thread.start()
   loop.run()
+  gsc_monitor.shutdown()
+  client_thread.join()
 
 
 
+
+
+@click.command(help="A gsc monitor test client to test gsc monitor servers.")
+@click.option("--remote-hostname","-r",default='localhost',help="The remote server (running gsc) hostname.")
+@click.option("--local-hostname","-l",default='localhost',help="The local server (running gsc-monitor) hostname.")
+@click.option("--port","-p",help="Specify the (local) port to use for communicating with gsc session.")
+def gsc_monitor_test_client(remote_hostname,local_hostname,port):
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO)
+  ch = logging.StreamHandler()
+  logger.addHandler(ch)
+  port_range = (3001,3020)
+  if port:
+    port_range = (port,port)
+
+
+  gsc_monitor = MonitorClient(remote_hostname,local_hostname,port_range)
+  gsc_monitor.add_slot(lambda data: print(f"Recieved: '{data}'"))
+  thread = threading.Thread(target=gsc_monitor.start)
+  thread.start()
+  print("Press enter to shutdown:")
+  exit = False
+  while not exit:
+    ready = select.select([sys.stdin],[],[],1)[0]
+    if ready:
+      exit = True
+  gsc_monitor.shutdown()
+  thread.join()
 
 
 
@@ -228,6 +294,7 @@ def gsc_monitor_test_server(local_hostname,port):
     if ready:
       exit = True
     else:
-      server.broadcast_message({'desc':'test message'})
+      mesg = {'desc' : 'test message', 'mode' : 'Modes.Insert', 'lines' : ["pwd","ls","cat tmp.txt","gnuplot","exit"], 'pos':(2,5)}
+      server.broadcast_message(mesg)
 
   server.shutdown()

@@ -4,6 +4,7 @@ import threading
 import time
 import logging
 import json
+import struct
 logger = logging.getLogger(__name__)
 
 
@@ -37,15 +38,25 @@ class MonitorServer:
     if not isinstance(message,(str,bytes)):
       message = json.dumps(message)
 
+    if logger.isEnabledFor(logging.DEBUG):
+      logger.debug(f"Broadcasting message: '{message}'")
+
     if not isinstance(message,bytes):
       message = message.encode('utf-8')
+
+    message = struct.pack('>I',len(message)) + message
+
     live_connections = []
     for client in self.connections:
       try:
         client.sendall(message)
+        if logger.isEnabledFor(logging.DEBUG):
+          logger.debug(f"Actual message sent to {client}: '{message}'")
         live_connections.append(client)
       except BrokenPipeError:
-        pass
+        client.close()
+      except ConnectionResetError:
+        client.close()
     self.connections = live_connections
 
 

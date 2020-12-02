@@ -388,7 +388,7 @@ class ScriptedSession:
 
     def send_state_to_monitors(self):
       state = {'mode':str(self.mode),
-          'pos': (self.script.line + 1,  self.script.col + 1),
+          'pos': (self.script.line,  self.script.col),
           'lines': self.script.lines
           }
       self.monitor_server.broadcast_message(state)
