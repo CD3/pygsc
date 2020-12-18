@@ -3,6 +3,7 @@ from .TerminalSession import *
 from .UserInputHandler import *
 from .CommandParser import *
 from .MonitorServer import *
+from .MessageDisplay import *
 from . import ucode
 import sys,tty,string
 import enum
@@ -81,6 +82,22 @@ class ScriptedSession:
             else:
               logger.error(f"Unrecognized value '{res['args'][0]}' in statusline command. Ignoring.")
           self.session.script.seek_next_line()
+
+        if res['name'] == "display":
+          if self.session.message_display is None:
+            if MessageDisplay is None:
+              logger.error(f"Script contained a 'display' command, but no message displayer could be found. Make sure you have one of the supported GUI kits installed (pygame for example).")
+              self.session.message_display = DummyMessageDisplay()
+            else:
+              self.session.message_display = MessageDisplay()
+
+          if not self.session.message_display.is_running():
+            self.session.message_display.start()
+
+          if len(res['args']) > 0:
+            self.session.message_display.set_message(res['args'][0])
+          self.session.script.seek_next_line()
+
 
       def handle_script_current_char(self):
         '''
@@ -276,6 +293,7 @@ class ScriptedSession:
         self.command_parser.add_command("stdout")
         self.command_parser.add_command("pause")
         self.command_parser.add_command("comment")
+        self.command_parser.add_command("display")
 
         if have_blessings:
           self.bterm = blessings.Terminal()
@@ -310,6 +328,8 @@ class ScriptedSession:
         self.monitor_server_hostname = "localhost"
         self.monitor_server_port = 3000
 
+        self.message_display = None
+
     def cleanup(self):
       try:
         logger.debug("trying to stop terminal session")
@@ -323,6 +343,10 @@ class ScriptedSession:
           termios.tcsetattr(self.STDINFD, termios.TCSANOW, self.saved_terminal_settings)
         except Exception as e:
           logger.debug(f"there was en error: {e}")
+
+      if self.message_display.is_running():
+        self.message_display.shutdown()
+      self.message_display = None
 
 
     def send_to_terminal(self,text):
@@ -351,6 +375,7 @@ class ScriptedSession:
 
     def set_statusline(self,flag):
       self.statusline_flag = flag
+
     def toggle_statusline(self):
       self.statusline_flag = not self.statusline_flag
 
@@ -374,6 +399,7 @@ class ScriptedSession:
       
     def set_monitor(self,flag):
       self.monitor_server_flag = flag
+
     def toggle_monitor(self):
       self.monitor_server_flag = not self.monitor_server_flag
 
@@ -394,7 +420,8 @@ class ScriptedSession:
       self.monitor_server.broadcast_message(state)
 
 
-
+    def set_message_display(self,display):
+      self.message_display = display
 
 
 
