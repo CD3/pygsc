@@ -98,3 +98,43 @@ or just temporarily take over the demo.
 Temporary Pass-through mode is a special version of pass-through mode that exits as soon as the user pressed return. It is useful for allowing the user to insert a password.
 
 `return`: send `\r` to shell and switch back to previous mode.
+
+
+
+### Commands
+
+A script may embed commands in its comments. These are special keywords recognized by `gsc` that will cause
+some side effect or action to take place. Commands may provide arguments that will be processed by `gsc` when
+the command is recognized. The syntax for a command is
+
+```
+# name[:  [arg1 [arg2 [...]]]]
+```
+
+If a command takes arguments, a colon ':' must separate the command name from the arguments. Multiple arguments
+are separated by spaces. If an argument contains spaces, it must be quoted.
+
+`pause: N`
+
+Pause the session for `N` seconds. If `N` is less than zero, the session will be paused until the user presses a key.
+
+`display: 'message to display'`
+
+Display a message in a separate display window. This command requires a message display backend to be installed.
+Currently, the only backend supported is `pygame`. So, to use this command, `pygame` must be installed.
+
+`passthrough`
+
+Switch to pass-through mode. See above.
+
+`temporary passthrough`
+
+Switch to temporary pass-through mode. See above.
+
+`line`
+
+Switch to line mode. See above.
+
+`statusline: [on|off]`
+
+Enable/disable the status line.
