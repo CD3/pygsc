@@ -45,6 +45,8 @@ class ScriptedSession:
         '''
         Look at current script line and
         take any actions necessary.
+
+        Returns True if session to continue to next line.
         '''
         cl = self.session.script.current_line()
         if cl is None:
@@ -97,6 +99,23 @@ class ScriptedSession:
           if len(res['args']) > 0:
             self.session.message_display.set_message(res['args'][0])
           self.session.script.seek_next_line()
+
+          return True
+        
+        if res['name'] == "pause":
+          self.session.script.seek_next_line()
+          if len(res['args']) > 0:
+            t = float(res['args'][0])
+            if t < 0:
+              logger.info(f"Pausing until user presses a key.")
+              self.session.input_handler.read()
+            else:
+              logger.info(f"Pausing for {t} seconds...")
+              time.sleep(t)
+          return True
+
+
+        return False
 
 
       def handle_script_current_char(self):
