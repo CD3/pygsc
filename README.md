@@ -69,14 +69,20 @@ to press enter before starting the next line in the script.
 
 `ctrl-d`: switch to command mode.
 
-#### Insert Mode
+`ctrl-c`: exit `gsc`
+
+#### Line Mode
 
 Line mode is special type of insert mode where entire lines are sent to the shell instead of single characters. This mode is useful for
 quickly testing a script.
 
+`<any character>`: send next line to the shell.
+
 `return`: send `\r` to shell and load next script line.
 
 `ctrl-d`: switch to command mode.
+
+`ctrl-c`: exit `gsc`
 
 #### Command Mode
 
