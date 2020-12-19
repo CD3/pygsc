@@ -195,9 +195,23 @@ class ScriptedSession:
         '''
         Overload InserMode single char handler to send entire lines.
         '''
-        line = self.session.script.current_line()
-        self.session.script.seek_end_col()
-        self.session.terminal.send(line)
+
+        input = self.session.input_handler.read()
+        if self.session.input_handler.last_read_ord in [127]: # backspace
+          self.session.terminal.send(chr(127))
+          self.session.script.seek_prev_col()
+        elif self.session.input_handler.last_read_ord in [4]: # ctl-d
+          logger.debug(f"switching modes: insert -> command")
+          self.session.mode = self.session.Modes.Command
+          return True
+        elif self.session.input_handler.last_read_ord in [3]: # ctl-c
+          self.session.exit_flag = True
+          return True
+        else:
+          line = self.session.script.current_line()
+          self.session.script.seek_end_col()
+          self.session.terminal.send(line)
+
         return False
 
 
