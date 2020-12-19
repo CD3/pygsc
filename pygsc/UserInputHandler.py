@@ -1,4 +1,5 @@
 import sys,os
+import select
 import termios,tty
 from queue import Queue
 import logging
@@ -44,9 +45,16 @@ class UserInputHandler:
   def queue_input(self,input):
     self.queue.put(input)
 
-  def read(self):
+  def read(self,timeout=None):
     if self.queue.empty():
-      self.last_read_input = os.read(self.inputfd,self.chunk_size)
+      if timeout is None:
+        self.last_read_input = os.read(self.inputfd,self.chunk_size)
+      else:
+        r,w,e = select.select([self.inputfd], [], [], timeout)
+        if self.inputfd in r:
+          self.last_read_input = os.read(self.inputfd,self.chunk_size)
+        else:
+          self.last_read_input = None
     else:
       self.last_read_input = self.queue.get()
 

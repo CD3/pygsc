@@ -106,12 +106,21 @@ class ScriptedSession:
           self.session.script.seek_next_line()
           if len(res['args']) > 0:
             t = float(res['args'][0])
-            if t < 0:
-              logger.info(f"Pausing until user presses a key.")
-              self.session.input_handler.read()
-            else:
-              logger.info(f"Pausing for {t} seconds...")
-              time.sleep(t)
+            logger.info(f"Pausing for {t} seconds...")
+            stime = time.perf_counter()
+            while time.perf_counter() - stime < abs(t):
+              input = self.session.input_handler.read(0.1)
+              if input is not None:
+                if t < 0:
+                  break
+                else:
+                  if ord(input) in [4]:
+                    break
+
+
+
+
+
           return True
 
 
