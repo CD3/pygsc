@@ -70,6 +70,8 @@ def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monit
     if logger:
       logger.debug("Session finished")
 
+    return 0
+
 
 
 @click.command(help="Record gsc script.")

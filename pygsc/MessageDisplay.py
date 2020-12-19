@@ -5,6 +5,7 @@ import logging
 
 
 try:
+  os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
   import pygame
   have_pygame = True
 except:
@@ -14,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 class PygameMessageDisplay:
   def __init__(self,width=800,height=20,font_name="courier",font_size=20):
-    pygame.init()
-    self.text_font = pygame.font.SysFont(font_name,font_size)
+    self.text_font_name = font_name
+    self.text_font_size = font_size
     self.text_color = (200,200,200)
     self.win_width = width
     self.win_height = height
@@ -38,10 +39,17 @@ class PygameMessageDisplay:
     pygame.quit()
 
   def start(self):
+    logger.info("Initializing pygame")
+    pygame.font.init()
+    pygame.display.init()
+    logger.info("Starting display thread")
     self.display_thread.start()
+
+
 
   def run(self):
     self.running = True
+    self.text_font = pygame.font.SysFont(self.text_font_name,self.text_font_size)
     self.screen = pygame.display.set_mode((self.win_width,self.win_height),pygame.NOFRAME)
     self.screen.fill(self.win_color)
     pygame.display.flip()

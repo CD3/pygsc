@@ -363,7 +363,7 @@ class ScriptedSession:
         except Exception as e:
           logger.debug(f"there was en error: {e}")
 
-      if self.message_display.is_running():
+      if self.message_display is not None and self.message_display.is_running():
         self.message_display.shutdown()
       self.message_display = None
 
