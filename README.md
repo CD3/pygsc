@@ -18,6 +18,23 @@ there.
       exiting the demo.
 - Statusline in the upper right corner of the terminal lets you know where you are and what mode your in. This can be disabled.
 
+## Installing
+
+To install, clone this repository and run pip in the root directory.
+
+```
+$ git clone <URL_FOR_THIS_REPO>
+$ cd pygsc
+$ pip install .
+```
+
+Or can also install the latest release from PyPi.
+```
+$ pip install pygsc
+```
+
+Note these may not be up-to-date with the latest changes in the repository.
+
 ## Usage
 
 To start a demo, run `gsc` with the script
