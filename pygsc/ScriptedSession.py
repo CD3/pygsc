@@ -56,6 +56,7 @@ class ScriptedSession:
           return False
 
         if res['name'] == "comment":
+          self.session.script.seek_next_line()
           return False
 
 
