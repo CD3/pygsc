@@ -5,6 +5,7 @@ import time
 import json
 import os,sys
 import select
+import socket
 
 
 from .ScriptRecorder import *
@@ -28,6 +29,17 @@ def make_interactive_shell(shell):
 
     return shell
 
+def get_my_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 @click.command(help="Run a shell script interactivly.")
 @click.argument("script",type=click.Path(exists=True))
