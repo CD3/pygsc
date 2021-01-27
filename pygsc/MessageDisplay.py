@@ -50,7 +50,8 @@ class PygameMessageDisplay:
   def run(self):
     self.running = True
     self.text_font = pygame.font.SysFont(self.text_font_name,self.text_font_size)
-    self.screen = pygame.display.set_mode((self.win_width,self.win_height),pygame.NOFRAME)
+    # self.screen = pygame.display.set_mode((self.win_width,self.win_height),pygame.NOFRAME)
+    self.screen = pygame.display.set_mode((self.win_width,self.win_height))
     self.screen.fill(self.win_color)
     pygame.display.flip()
     self.set_message("")
