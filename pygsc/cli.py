@@ -49,8 +49,10 @@ def get_my_ip():
 @click.option("--no-statusline/--statusline",help="disable/enable status line (the statusline may interfere with some full screen applications, such as vim). status line is enabled by default.")
 @click.option("--line-mode","-l",is_flag=True,help="Start script in line mode.")
 @click.option("--startup-command", multiple=True, help="Send TEXT to the terminal before starting input (a \\r will be appended). May be given multiple times.")
-@click.option("--monitor/--no-monitor", multiple=True, help="Run a server to send status information to gsc monitor clients (such as gsc-monitor).")
-def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monitor):
+@click.option("--monitor/--no-monitor",  help="Run a server to send status information to gsc monitor clients (such as gsc-monitor).")
+@click.option("--monitor-hostname", default="auto", help="Specify the hostname to use for the gsc monitor server (default auto).")
+@click.option("--no-render", is_flag=True, help="Do not perform variable expansion in the script file before running. Variables in the script are identified with %{VarName} (so that they do not interfere with shell variables ${VarName} that may be used in the script). By default, environment variables will be expanded.")
+def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monitor,monitor_hostname,no_render):
 
     logger = None
     if verbose or debug:
@@ -68,8 +70,14 @@ def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monit
     if logger:
       logger.debug(f"Shell: {shell}")
     session = ScriptedSession(script,shell)
+    if not no_render:
+      session.script.render(os.environ)
+
     session.set_statusline(not no_statusline)
-    session.set_monitor(monitor)
+    if monitor:
+      session.monitor_server_hostname = get_my_ip() if monitor_hostname == "auto" else monitor_hostname
+      session.set_monitor(monitor)
+
     if line_mode:
       session.mode = session.Modes.Line
     try:
@@ -179,7 +187,7 @@ def display_keycodes(keypress_driver):
 
 @click.command(help="A gsc monitor client to status information about the current gsc session.")
 @click.option("--remote-hostname","-r",default='localhost',help="The remote server (running gsc) hostname.")
-@click.option("--local-hostname","-l",default='localhost',help="The local server (running gsc-monitor) hostname.")
+@click.option("--local-hostname","-l",default='auto',help="The local server (running gsc-monitor) hostname.")
 @click.option("--port","-p",help="Specify the (local) port to use for communicating with gsc session.")
 @click.option("--debug","-d",is_flag=True,help="Log debug messages.")
 @click.option("--verbose","-v",is_flag=True,help="Log info messages.")
@@ -210,6 +218,8 @@ def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
 
 
   piper,pipew = os.pipe()
+  if local_hostname == 'auto':
+    local_hostname = get_my_ip()
   gsc_monitor = MonitorClient(remote_hostname,local_hostname,port_range)
   gsc_monitor.add_slot(lambda data: os.write(pipew,data))
 
@@ -224,7 +234,8 @@ def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
     try:
       state = json.loads(message.decode('utf-8'))
     except:
-      logger.error("Could not decode message: {message}")
+      if logger:
+        logger.error(f"Could not decode message: {message}")
       return
     l,c = state['pos']
     completed_lines = '\n'.join(state['lines'][0:l])+'\n'
@@ -267,13 +278,18 @@ def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
 
 @click.command(help="A gsc monitor test client to test gsc monitor servers.")
 @click.option("--remote-hostname","-r",default='localhost',help="The remote server (running gsc) hostname.")
-@click.option("--local-hostname","-l",default='localhost',help="The local server (running gsc-monitor) hostname.")
+@click.option("--local-hostname","-l",default='auto',help="The local server (running gsc-monitor) hostname.")
 @click.option("--port","-p",help="Specify the (local) port to use for communicating with gsc session.")
 def gsc_monitor_test_client(remote_hostname,local_hostname,port):
   logger = logging.getLogger()
   logger.setLevel(logging.INFO)
   ch = logging.StreamHandler()
   logger.addHandler(ch)
+
+  if local_hostname == 'auto':
+    local_hostname = get_my_ip()
+
+
   port_range = (3001,3020)
   if port:
     port_range = (port,port)
@@ -296,13 +312,16 @@ def gsc_monitor_test_client(remote_hostname,local_hostname,port):
 
 
 @click.command(help="Run a gsc monitor server to test gsc monitor clients.")
-@click.option("--local-hostname","-l",default="localhost",help="The server hostname.")
+@click.option("--local-hostname","-l",default="auto",help="The server hostname.")
 @click.option("--port","-p",default=3000,help="Specify the (local) port to lisiten for new clients on.")
 def gsc_monitor_test_server(local_hostname,port):
   logger = logging.getLogger()
   logger.setLevel(logging.INFO)
   ch = logging.StreamHandler()
   logger.addHandler(ch)
+
+  if local_hostname == 'auto':
+    local_hostname = get_my_ip()
   server = MonitorServer(local_hostname,port)
   server.start()
   print("Press enter to shutdown:")

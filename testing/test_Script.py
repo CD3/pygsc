@@ -1,6 +1,7 @@
 from pygsc.Script import Script
 from pygsc import ucode
 import pytest 
+import os
 from utils import tmpfile
 
 
@@ -158,4 +159,16 @@ def test_current_char_with_seeking(simple_script):
   assert script.eof()
 
 
+def test_script_rendering():
+  file = tmpfile(["x%{var1}x","%{HOME}/tmp"])
+  script = Script(file)
+  script.render({"var1":"val1"})
+
+  assert script.lines[0] == "xval1x"
+  assert script.lines[1] == "%{HOME}/tmp"
+
+  script.render(os.environ)
+
+  assert script.lines[0] == "xval1x"
+  assert script.lines[1] == f"{os.environ['HOME']}/tmp"
 

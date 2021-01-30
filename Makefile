@@ -26,7 +26,7 @@ run-cli_tests:
 _test-install-virtualenv:
 	virtualenv _test-install-virtualenv
 	. _test-install-virtualenv/bin/activate && pip install pytest cram pexpect
-	. _test-install-virtualenv/bin/activate && pip install .
+	. _test-install-virtualenv/bin/activate && pip install -e .
 
 test-install: _test-install-virtualenv
 

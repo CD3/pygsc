@@ -1,4 +1,5 @@
 from pathlib import Path
+import string
 
 
 class Script:
@@ -85,6 +86,16 @@ class Script:
     self.reset_seek_line()
     self.reset_seek_col()
 
+
+
+  def render( self, context ):
+    class CustomTemplate(string.Template):
+      delimiter = '%'
+
+    for i in range(len(self.lines)):
+      new_line = CustomTemplate(self.lines[i]).safe_substitute(context)
+      self.lines[i] = new_line
+      
 
 
 
