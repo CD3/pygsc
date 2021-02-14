@@ -13,7 +13,7 @@ setup(
   author_email = 'clifton.clark@gmail.com',
   url = 'https://github.com/CD3/pygsc',
   download_url = f'https://github.com/CD3/pygsc/archive/{__version__}.tar.gz',
-  install_requires = ['click','blessings','urwid','pygame'],
+  install_requires = ['click','blessed','urwid','pygame'],
   entry_points='''
   [console_scripts]
   gsc=pygsc.cli:gsc

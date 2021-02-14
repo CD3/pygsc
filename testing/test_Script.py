@@ -172,3 +172,39 @@ def test_script_rendering():
   assert script.lines[0] == "xval1x"
   assert script.lines[1] == f"{os.environ['HOME']}/tmp"
 
+def test_multi_char_keys():
+  file = tmpfile(["ls a","ls /OD."])
+  script = Script(file)
+
+  assert script.current_char() == 'l'
+  script.seek_next_col()
+  assert script.current_char() == 's'
+  script.seek_next_col()
+  assert script.current_char() == ' '
+  script.seek_next_col()
+  assert script.current_char() == 'a'
+  script.seek_next_col()
+  assert script.current_char() == ''
+  script.seek_next_col()
+
+  script.seek_next_line()
+
+
+  assert script.current_char() == 'l'
+  script.seek_next_col()
+  assert script.current_char() == 's'
+  script.seek_next_col()
+  assert script.current_char() == ' '
+  script.seek_next_col()
+  assert script.current_char() == '/'
+  script.seek_next_col()
+  assert script.current_char() == ''
+  assert script.current_key() == ''
+
+  script.add_multi_char_key('OD')
+  assert script.current_char() == ''
+  assert script.current_key() == 'OD'
+
+
+
+

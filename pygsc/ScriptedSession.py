@@ -9,6 +9,11 @@ import sys,tty,string
 import enum
 import logging
 try:
+  import blessed
+  have_blessed = True
+except:
+  have_blessed = False
+try:
   import blessings
   have_blessings = True
 except:
@@ -145,8 +150,9 @@ class ScriptedSession:
           self.session.exit_flag = True
           return True
         else:
-          self.session.terminal.send(self.session.script.current_char())
-          self.session.script.seek_next_col()
+          key = self.session.script.current_key()
+          self.session.terminal.send(key)
+          self.session.script.seek_next_col(len(key))
 
         return False
 
@@ -338,11 +344,15 @@ class ScriptedSession:
         self.command_parser.add_command("comment")
         self.command_parser.add_command("display")
 
-        if have_blessings:
-          self.bterm = blessings.Terminal()
-          # print(self.bterm.clear())
+        if have_blessed:
+          self.bterm = blessed.Terminal()
+          self.detected_term_escape_sequences = list(blessed.keyboard.get_keyboard_sequences(self.bterm).keys())
         else:
-          self.bterm = None
+          self.detected_term_escape_sequences = []
+          if have_blessings:
+            self.bterm = blessings.Terminal()
+          else:
+            self.bterm = None
 
         try:
           self.saved_terminal_settings = termios.tcgetattr(self.STDINFD)

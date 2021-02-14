@@ -1,5 +1,7 @@
+from .CharTree import CharTree
 from pathlib import Path
 import string
+import pyparsing
 
 
 class Script:
@@ -9,6 +11,10 @@ class Script:
     self.add_lines(filename)
     self.line = 0
     self.col = 0
+    self.multi_char_keys = CharTree()
+
+  def add_multi_char_key(self,s:str):
+    self.multi_char_keys.add_sequence(s)
 
   def eol(self):
     return self.line >= len(self.lines) or self.col >= len(self.lines[self.line])
@@ -75,6 +81,17 @@ class Script:
 
   def current_char(self):
     return self.lines[self.line][self.col]
+
+  def current_key(self):
+    # We need to check if the current char is actually the beginning
+    # of a multi-char sequence. If so, then we need to return all of
+    # them at once.
+    m = self.multi_char_keys.match(self.lines[self.line][self.col:])
+    if m:
+      return m
+    return self.current_char()
+
+
       
   def reset_seek_line(self):
     self.line = 0

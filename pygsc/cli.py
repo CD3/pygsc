@@ -52,7 +52,8 @@ def get_my_ip():
 @click.option("--monitor/--no-monitor",  help="Run a server to send status information to gsc monitor clients (such as gsc-monitor).")
 @click.option("--monitor-hostname", default="auto", help="Specify the hostname to use for the gsc monitor server (default auto).")
 @click.option("--no-render", is_flag=True, help="Do not perform variable expansion in the script file before running. Variables in the script are identified with %{VarName} (so that they do not interfere with shell variables ${VarName} that may be used in the script). By default, environment variables will be expanded.")
-def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monitor,monitor_hostname,no_render):
+@click.option("--multi-char-keys", default='auto', help="Specify a list of multi-character keypresses that should be detected in scripts and send as single input to the terminal. Currently only supports 'auto', which will use the `blessed` module to add all key press escape sequences listed in terminfo.")
+def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monitor,monitor_hostname,no_render,multi_char_keys):
 
     logger = None
     if verbose or debug:
@@ -72,6 +73,22 @@ def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monit
     session = ScriptedSession(script,shell)
     if not no_render:
       session.script.render(os.environ)
+
+    
+    if multi_char_keys == "auto":
+      if len(session.detected_term_escape_sequences) > 1:
+        for k in session.detected_term_escape_sequences:
+          session.script.add_multi_char_key(k)
+      else:
+        # if we didn't detect any sequences, add some common ones
+        # that should be defined for all xterm-compatible terminals
+        session.script.add_multi_char_key('OD')  # left arrow
+        session.script.add_multi_char_key('OC')  # right arrow
+        session.script.add_multi_char_key('OB')  # down arrow
+        session.script.add_multi_char_key('OA')  # up arrow
+        session.script.add_multi_char_key('[3~') # delete
+
+
 
     session.set_statusline(not no_statusline)
     if monitor:
