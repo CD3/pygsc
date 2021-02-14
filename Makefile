@@ -33,5 +33,4 @@ test-install: _test-install-virtualenv
 test:
 	make test-install
 	. _test-install-virtualenv/bin/activate && cd testing && time python -m pytest -s
-	. _test-install-virtualenv/bin/activate && cd testing && time cram *.t
 
