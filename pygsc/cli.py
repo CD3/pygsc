@@ -43,6 +43,7 @@ def get_my_ip():
 
 @click.command(help="Run a shell script interactivly.")
 @click.argument("script",type=click.Path(exists=True))
+@click.version_option()
 @click.option("--shell","-s",help="The shell to use for running the script.")
 @click.option("--debug","-d",is_flag=True,help="Log debug messages.")
 @click.option("--verbose","-v",is_flag=True,help="Log info messages.")
@@ -113,6 +114,7 @@ def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monit
 
 @click.command(help="Record gsc script.")
 @click.argument("output",type=click.Path(exists=False))
+@click.version_option()
 @click.option("--shell","-s",help="The shell to use for running the script.")
 def gsc_record(output,shell):
   output = pathlib.Path(output)
@@ -129,6 +131,7 @@ def gsc_record(output,shell):
 
 
 @click.command(help="Display keycodes for keypresses.")
+@click.version_option()
 @click.option("--keypress-driver","-k",is_flag=True,help="Use keypress event driver instead of characters from stdin.")
 def display_keycodes(keypress_driver):
   import tty, termios, sys, os
@@ -203,6 +206,7 @@ def display_keycodes(keypress_driver):
 
 
 @click.command(help="A gsc monitor client to status information about the current gsc session.")
+@click.version_option()
 @click.option("--remote-hostname","-r",default='localhost',help="The remote server (running gsc) hostname.")
 @click.option("--local-hostname","-l",default='auto',help="The local server (running gsc-monitor) hostname.")
 @click.option("--port","-p",help="Specify the (local) port to use for communicating with gsc session.")
@@ -294,6 +298,7 @@ def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
 
 
 @click.command(help="A gsc monitor test client to test gsc monitor servers.")
+@click.version_option()
 @click.option("--remote-hostname","-r",default='localhost',help="The remote server (running gsc) hostname.")
 @click.option("--local-hostname","-l",default='auto',help="The local server (running gsc-monitor) hostname.")
 @click.option("--port","-p",help="Specify the (local) port to use for communicating with gsc session.")
@@ -329,6 +334,7 @@ def gsc_monitor_test_client(remote_hostname,local_hostname,port):
 
 
 @click.command(help="Run a gsc monitor server to test gsc monitor clients.")
+@click.version_option()
 @click.option("--local-hostname","-l",default="auto",help="The server hostname.")
 @click.option("--port","-p",default=3000,help="Specify the (local) port to lisiten for new clients on.")
 def gsc_monitor_test_server(local_hostname,port):
