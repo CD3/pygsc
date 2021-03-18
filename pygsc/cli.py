@@ -108,7 +108,10 @@ def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monit
     if logger:
       logger.debug("Session finished")
 
-    return 0
+    if session.script.line == len(session.script.lines) - 1:
+      return sys.exit(0)
+    else:
+      return sys.exit(1)
 
 
 
