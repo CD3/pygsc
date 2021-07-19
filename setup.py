@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-__version__= '0.4'
+__version__= '0.4.1'
 
 setup(
   name = 'pygsc',
@@ -13,7 +13,7 @@ setup(
   author_email = 'clifton.clark@gmail.com',
   url = 'https://github.com/CD3/pygsc',
   download_url = f'https://github.com/CD3/pygsc/archive/{__version__}.tar.gz',
-  install_requires = ['click','blessed','urwid','pygame'],
+  install_requires = ['click','pyparsing','blessed','urwid','pygame'],
   entry_points='''
   [console_scripts]
   gsc=pygsc.cli:gsc
