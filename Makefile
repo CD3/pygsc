@@ -1,7 +1,7 @@
 build-package:
 	pipenv run python setup.py sdist
 
-upload-package:
+upload-package: build-package
 	pipenv run python -m twine upload dist/*
 
 
