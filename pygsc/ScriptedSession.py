@@ -149,6 +149,10 @@ class ScriptedSession:
         elif self.session.input_handler.last_read_ord in [3]: # ctl-c
           self.session.exit_flag = True
           return True
+        elif self.session.input_handler.last_read_ord in [16]: # ctl-p
+          logger.debug(f"switching modes: insert -> passthrough")
+          self.session.mode = self.session.Modes.Passthrough
+          return True
         else:
           key = self.session.script.current_key()
           self.session.terminal.send(key)
@@ -297,6 +301,10 @@ class ScriptedSession:
           if self.session.input_handler.last_read_ord in [4]: # ctl-d
             logger.debug("switching mode: pass-through -> command")
             self.session.mode = self.session.Modes.Command
+            return
+          elif self.session.input_handler.last_read_ord in [16]: # ctl-p
+            logger.debug(f"switching modes: pass-through -> insert")
+            self.session.mode = self.session.Modes.Insert
             return
           self.session.terminal.send(input)
           self.session.update_statusline()

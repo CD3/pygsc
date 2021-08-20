@@ -69,6 +69,8 @@ to press enter before starting the next line in the script.
 
 `ctrl-d`: switch to command mode.
 
+`ctrl-p`: switch to pass-through mode.
+
 `ctrl-c`: exit `gsc`
 
 #### Line Mode
@@ -115,6 +117,8 @@ Pass-through mode sends all user input to the shell. This can be used to fix the
 or just temporarily take over the demo.
 
 `ctrl-d`: switch to command mode.
+
+`ctrl-p`: switch to insert mode (`ctrl-p` acts as a toggle between insert and pass-through mode).
 
 #### Temporary Pass-through Mode
 
