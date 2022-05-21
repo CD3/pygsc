@@ -285,6 +285,8 @@ class ScriptedSession:
             self.session.script.seek_beg_col()
           if input in ["$"]:
             self.session.script.seek_end_col()
+          if input in ["R"]:
+            self.session.script.reload()
 
           self.session.update_statusline()
 

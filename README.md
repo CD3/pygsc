@@ -17,6 +17,7 @@ there.
     - If you run into an error in your script (a typo, or some file that is missing), you can switch to pass-through mode to quickly fix the error without
       exiting the demo.
 - Statusline in the upper right corner of the terminal lets you know where you are and what mode your in. This can be disabled.
+- Reload scripts while running without starting over. If you reload a script, its contents are updated, but the position in the demo is maintained.
 
 ## Installing
 
@@ -110,6 +111,8 @@ to skip a line or backup.
 `$`: jump to the end of the current script line (one past the last character).
 
 `s`: toggle status line on/off.
+
+`R`: reload scripts (useful for developing scripts, you can edit the script in a text file while running and reload).
 
 #### Pass-through Mode
 

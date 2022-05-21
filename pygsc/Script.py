@@ -23,17 +23,39 @@ class Script:
     return self.line >= len(self.lines) or (self.line >= len(self.lines)-1 and self.col >= len(self.lines[self.line]))
 
   def add_lines(self,lines):
+    '''
+    *Add* lines to script by appending to the current list.
+    '''
 
     if isinstance(lines,str):
       lines = Path(lines)
 
     if isinstance(lines,Path):
-      self.filenames = str(lines)
+      self.filenames.append(str(lines))
       lines = lines.read_text().split("\n")
     else:
       self.filenames = "None"
 
     self.lines += lines
+
+  def replace_lines(self,lines):
+    '''
+    *Replace* lines in script by clearing current list and adding.
+    '''
+    self.lines = []
+    self.add_lines(lines)
+
+  def reload(self):
+    '''
+    Reload script from file.
+    '''
+    filenames = self.filenames
+    self.lines = []
+    self.filenames = []
+    for filename in filenames:
+        self.add_lines(filename)
+
+
 
   def seek_next_line(self,n=1,ret=True):
     self.line += n
