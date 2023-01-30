@@ -75,7 +75,7 @@ def gsc(script,shell,debug,verbose,no_statusline,line_mode,startup_command,monit
     if not no_render:
       session.script.render(os.environ)
 
-    
+
     if multi_char_keys == "auto":
       if len(session.detected_term_escape_sequences) > 1:
         for k in session.detected_term_escape_sequences:
@@ -146,7 +146,7 @@ def display_keycodes(keypress_driver):
   except:
     have_pynput = False
 
-  
+
   if keypress_driver:
     if not have_pynput:
       print("Could not run keypress-based driver. `pynput` is not installed.")
@@ -213,9 +213,11 @@ def display_keycodes(keypress_driver):
 @click.option("--remote-hostname","-r",default='localhost',help="The remote server (running gsc) hostname.")
 @click.option("--local-hostname","-l",default='auto',help="The local server (running gsc-monitor) hostname.")
 @click.option("--port","-p",help="Specify the (local) port to use for communicating with gsc session.")
+@click.option("--before-context","-B",default=4,help="Specify the number of lines of context to display before the current line.")
+@click.option("--after-context","-A",default=10,help="Specify the number of lines of context to display after the current line.")
 @click.option("--debug","-d",is_flag=True,help="Log debug messages.")
 @click.option("--verbose","-v",is_flag=True,help="Log info messages.")
-def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
+def gsc_monitor(remote_hostname,local_hostname,port,before_context,after_context,debug,verbose):
   logger = None
   if verbose or debug:
     logger = logging.getLogger()
@@ -244,6 +246,9 @@ def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
   piper,pipew = os.pipe()
   if local_hostname == 'auto':
     local_hostname = get_my_ip()
+  if remote_hostname == 'localhost':
+    remote_hostname = local_hostname
+
   gsc_monitor = MonitorClient(remote_hostname,local_hostname,port_range)
   gsc_monitor.add_slot(lambda data: os.write(pipew,data))
 
@@ -262,10 +267,12 @@ def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
         logger.error(f"Could not decode message: {message}")
       return
     l,c = state['pos']
-    completed_lines = '\n'.join(state['lines'][0:l])+'\n'
+    completed_lines = state['lines'][max(0,l-before_context):l]
+    completed_lines = '\n'.join(completed_lines)+'\n'
     current_line_completed_chars = state['lines'][l][:c]
     current_line_upcomming_chars = state['lines'][l][c:]+'\n'
-    upcomming_lines = '\n'.join(state['lines'][l+1:])+'\n'
+    upcomming_lines = state['lines'][l+1:min(len(state['lines']),l+1+after_context)]
+    upcomming_lines = '\n'.join(upcomming_lines)+'\n'
     text = []
     text.append( ('dg',completed_lines) )
     text.append( ('dr',current_line_completed_chars) )
@@ -289,7 +296,7 @@ def gsc_monitor(remote_hostname,local_hostname,port,debug,verbose):
   loop = urwid.MainLoop(main_frame,palette=palette,unhandled_input=handle_input)
   loop.watch_file(piper,message_handler)
   # loop.set_alarm_in(0.1,poll,None)
-  
+
   client_thread = threading.Thread(target=gsc_monitor.start)
   client_thread.start()
   loop.run()
