@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pygsc"
-version = "0.5"
+version = "0.6"
 description = "Run command-line demos from a script."
 authors = ["CD Clark III <clifton.clark@gmail.com>"]
 license = "MIT"
