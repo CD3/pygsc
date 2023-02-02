@@ -7,4 +7,8 @@ cd
 # display: 'Consecutive messages need to be separated by a script line or pause command.'
 # pause: -1
 # display: 'Otherwise the second message will immediately be displayed over the first.'
+ls
+# display: 'multi-line messages'
+# display: 'are also possible'
+pwd
 

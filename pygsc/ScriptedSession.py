@@ -51,7 +51,9 @@ class ScriptedSession:
         Look at current script line and
         take any actions necessary.
 
-        Returns True if session to continue to next line.
+        Returns True if the `run()` method (above) should break out of the run loop after 
+        we are done. i.e. if we need to switch modes, process the next line, or just
+        return control back to the session.
         '''
         cl = self.session.script.current_line()
         if cl is None:
@@ -62,15 +64,12 @@ class ScriptedSession:
 
         if res['name'] == "comment":
           self.session.script.seek_next_line()
-          return False
-
-
 
         if res['name'] == "passthrough":
           self.session.mode = self.session.Modes.Passthrough
           self.session.script.seek_next_line()
           logger.debug(f"switching modes: insert -> pass-through")
-          return True
+          return True # need to exit run loop
 
         if res['name'] == "temporary passthrough":
             logger.debug(f"temporarily switching to pass-through mode")
@@ -90,8 +89,10 @@ class ScriptedSession:
             else:
               logger.error(f"Unrecognized value '{res['args'][0]}' in statusline command. Ignoring.")
           self.session.script.seek_next_line()
+          return True
 
         if res['name'] == "display":
+          message = []
           if self.session.message_display is None:
             if MessageDisplay is None:
               logger.error(f"Script contained a 'display' command, but no message displayer could be found. Make sure you have one of the supported GUI kits installed (pygame for example).")
@@ -103,11 +104,27 @@ class ScriptedSession:
             self.session.message_display.start()
 
           if len(res['args']) > 0:
-            self.session.message_display.set_message(res['args'][0])
-          self.session.script.seek_next_line()
+            # self.session.message_display.set_message(res['args'][0])
+            message.append( res['args'][0] )
+          else:
+            message.append( "" )
 
-          return True
-        
+          while True:
+              self.session.script.seek_next_line()
+              cl = self.session.script.current_line()
+              res = self.session.command_parser.parse(cl)
+              if res is None or res['name'] != 'display':
+                  break
+              if len(res['args']) > 0:
+                message.append( res['args'][0] )
+              else:
+                message.append( "" )
+              self.session.script.seek_next_line()
+
+          self.session.message_display.set_message('\n'.join(message))
+
+          return True # we need to break out of the run loop so we can process the next line
+
         if res['name'] == "pause":
           self.session.script.seek_next_line()
           if len(res['args']) > 0:
@@ -122,11 +139,6 @@ class ScriptedSession:
                 else:
                   if ord(input) in [4]:
                     break
-
-
-
-
-
           return True
 
 
