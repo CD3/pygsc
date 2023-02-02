@@ -137,7 +137,8 @@ class ScriptedSession:
                 if t < 0:
                   break
                 else:
-                  if ord(input) in [4]:
+                  # exit early if we get a ctrl-d
+                  if len(input) == 1 and ord(input) in [4]:
                     break
           return True
 

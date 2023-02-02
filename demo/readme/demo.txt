@@ -1,2 +1,0 @@
-terminal applications like vim, gnuplot, or remote ssh connections can all be scripted
-
