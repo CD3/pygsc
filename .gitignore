@@ -8,3 +8,4 @@ dist/
 *.egg-info/
 _*/
 poetry.lock
+uv.lock
