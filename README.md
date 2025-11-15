@@ -135,6 +135,10 @@ the command is recognized. The syntax for a command is
 If a command takes arguments, a colon ':' must separate the command name from the arguments. Multiple arguments
 are separated by spaces. If an argument contains spaces, it must be quoted.
 
+`include: filename`
+
+Insert the script in filename into the script. Include command can be nested.
+
 `pause: N`
 
 Pause the session for `N` seconds. If `N` is less than zero, the session will be paused until the user presses a key.
