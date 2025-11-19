@@ -163,3 +163,36 @@ Switch to line mode. See above.
 `statusline: [on|off]`
 
 Enable/disable the status line.
+
+### Keymaps
+
+Sometimes a script needs to include a special key sequence. For example, if the script opens an editor, it might need to use the arrow keys to navigate
+the file. These keys send non-printable characters that the terminal and applications interpret. Some editors (like vim/nvim) support inserting these characters
+into a text file. For vim/nvim you press ctrl-v and then the key. So to insert the character sent when the escape key is pressed you could insert .
+
+Thse are hard to read and not all special characters seem to get inserted correctly in all editor. So pygsc includes a set of mappings for the most common keys.
+
+``` bash
+'<tab>' -> '\t'
+'<bksp>' -> '\x7f'
+'<esc>' -> '\x1b'
+'<up>' -> '\x1bOA'
+'<down>' -> '\x1bOB'
+'<left>' -> '\x1bOD'
+'<right>' -> '\x1bOC'
+'<enter>' -> '\x1bOM'
+'<entr>' -> '\x1bOM'
+'<del>' -> '\x1b[3~'
+```
+
+So for example, a script could open vim, insert some text, go back to command mode and navigate
+
+``` bash
+vim file.txt
+iline one
+line two<esc>
+ggOnew first line<esc>
+:wq
+cat file.txt
+```
+
