@@ -1,26 +1,18 @@
+import enum
+import logging
+import string
+import sys
+import tty
+
+import blessed
+
+from . import ucode
+from .CommandParser import *
+from .MessageDisplay import *
+from .MonitorServer import *
 from .Script import *
 from .TerminalSession import *
 from .UserInputHandler import *
-from .CommandParser import *
-from .MonitorServer import *
-from .MessageDisplay import *
-from . import ucode
-import sys, tty, string
-import enum
-import logging
-
-try:
-    import blessed
-
-    have_blessed = True
-except:
-    have_blessed = False
-try:
-    import blessings
-
-    have_blessings = True
-except:
-    have_blessings = False
 
 logger = logging.getLogger(__name__)
 
@@ -368,17 +360,10 @@ class ScriptedSession:
         self.command_parser.add_command("comment")
         self.command_parser.add_command("display")
 
-        if have_blessed:
-            self.bterm = blessed.Terminal()
-            self.detected_term_escape_sequences = list(
-                blessed.keyboard.get_keyboard_sequences(self.bterm).keys()
-            )
-        else:
-            self.detected_term_escape_sequences = []
-            if have_blessings:
-                self.bterm = blessings.Terminal()
-            else:
-                self.bterm = None
+        self.bterm = blessed.Terminal()
+        self.detected_term_escape_sequences = list(
+            blessed.keyboard.get_keyboard_sequences(self.bterm).keys()
+        )
 
         try:
             self.saved_terminal_settings = termios.tcgetattr(self.STDINFD)

@@ -5,6 +5,7 @@ import pyparsing
 
 from .CharTree import CharTree
 from .CommandParser import *
+from .Keymap import Keymap
 
 
 class Script:
@@ -15,12 +16,16 @@ class Script:
         self.col = 0
         self.multi_char_keys = CharTree()
         self.command_parser = CommandParser()
+        self.keymap = Keymap()
 
         self.command_parser.add_command("include")
         self.add_lines(filename)
 
     def add_multi_char_key(self, s: str):
         self.multi_char_keys.add_sequence(s)
+
+    def add_keymap(self, k: str, v: str):
+        self.keymap.add_mapping(k, v)
 
     def eol(self):
         return self.line >= len(self.lines) or self.col >= len(self.lines[self.line])
@@ -140,4 +145,9 @@ class Script:
 
         for i in range(len(self.lines)):
             new_line = CustomTemplate(self.lines[i]).safe_substitute(context)
+            self.lines[i] = new_line
+
+    def expand_keymaps(self):
+        for i in range(len(self.lines)):
+            new_line = self.keymap.expand_keymaps(self.lines[i])
             self.lines[i] = new_line

@@ -7,7 +7,7 @@ name = "pygsc"
 version = "0.8"
 description = "Run command-line demos from a script."
 authors = [{ name = "CD Clark III", email = "clifton.clark@gmail.com" }]
-requires-python = "~=3.10"
+requires-python = "~=3.10.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

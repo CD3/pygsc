@@ -1,100 +1,95 @@
-import tty
-import pty
+import fcntl
 import os
-import sys
+import pathlib
+import pty
 import select
+import shutil
+import signal
+import struct
+import sys
 import termios
 import threading
 import time
-import pathlib
-import shutil
-import signal
-import fcntl
-import struct
-from queue import Queue
+import tty
 from enum import Enum
+from queue import Queue
+
+import blessed
+
 from . import ucode
 
 
-
 class TerminalSession:
-  class OutputMode(Enum):
-    Print = 1
-    Pause = 2
-    Drop = 3
+    class OutputMode(Enum):
+        Print = 1
+        Pause = 2
+        Drop = 3
 
+    def __init__(self, shell: list):
+        self.output_mode = TerminalSession.OutputMode.Print
+        self.STDINFD = sys.stdin.fileno()
+        self.STDOUTFD = sys.stdout.fileno()
+        self.STDERRFD = sys.stderr.fileno()
+        self.shutdown_flag = False
+        self.bterm = blessed.Terminal()
 
-  def __init__(self,shell:list):
+        self.slavePID, self.termfd = pty.fork()
 
-    self.output_mode = TerminalSession.OutputMode.Print
-    self.STDINFD = sys.stdin.fileno()
-    self.STDOUTFD = sys.stdout.fileno()
-    self.STDERRFD = sys.stderr.fileno()
-    self.shutdown_flag = False
+        if self.slavePID == pty.CHILD:
+            os.execvp(shell[0], shell)
 
-    self.slavePID,self.termfd = pty.fork()
+        # child proc will not make it to this point
+        self.sync_windows_size()
 
-    if self.slavePID == pty.CHILD:
-      os.execvp(shell[0], shell)
+        self.terminal_output_thread = threading.Thread(
+            target=self._process_terminal_output
+        )
+        self.terminal_output_thread.start()
 
-    # child proc will not make it to this point
-    self.sync_windows_size()
+        self.output_callbacks = []
 
-    self.terminal_output_thread = threading.Thread(target=self._process_terminal_output)
-    self.terminal_output_thread.start()
+    def add_output_callback(self, f):
+        self.output_callbacks.append(f)
 
-    self.output_callbacks = []
+    def _process_terminal_output(self):
+        poll = select.poll()
+        poll.register(self.termfd, select.POLLIN)
 
+        stash = Queue()
 
-  def add_output_callback(self,f):
-    self.output_callbacks.append(f)
+        while not self.shutdown_flag:
+            res = poll.poll(100)
+            for fd, evm in res:
+                if evm & select.POLLIN:
+                    c = os.read(fd, 1024)
+                    if self.output_mode == TerminalSession.OutputMode.Drop:
+                        continue
 
+                    if self.output_mode == TerminalSession.OutputMode.Print:
+                        while not stash.empty():
+                            os.write(self.STDOUTFD, stash.get())
+                        os.write(self.STDOUTFD, c)
 
-  def _process_terminal_output(self):
-    poll = select.poll()
-    poll.register(self.termfd,select.POLLIN)
+                    if self.output_mode == TerminalSession.OutputMode.Pause:
+                        stash.put(c)
 
-    stash = Queue()
+                    for f in self.output_callbacks:
+                        f(c)
 
-    while not self.shutdown_flag:
-      res = poll.poll(100)
-      for fd,evm in res:
-        if evm & select.POLLIN:
-          c = os.read(fd,1024)
-          if self.output_mode == TerminalSession.OutputMode.Drop:
-            continue
+    def stop(self):
+        os.kill(self.slavePID, signal.SIGKILL)
+        self.shutdown_flag = True
+        self.terminal_output_thread.join()
 
-          if self.output_mode == TerminalSession.OutputMode.Print:
-            while not stash.empty():
-              os.write(self.STDOUTFD,stash.get())
-            os.write(self.STDOUTFD,c)
+    def send(self, c: str):
+        if not isinstance(c, bytes):
+            c = c.encode(ucode)
+        os.write(self.termfd, c)
 
-          if self.output_mode == TerminalSession.OutputMode.Pause:
-            stash.put(c)
+    def sync_windows_size(self):
+        winsz = struct.pack("HHHH", 0, 0, 0, 0)
+        winsz = fcntl.ioctl(self.STDINFD, termios.TIOCGWINSZ, winsz)
+        fcntl.ioctl(self.termfd, termios.TIOCSWINSZ, winsz)
 
-          for f in self.output_callbacks:
-            f(c)
-            
-
-  def stop(self):
-    os.kill(self.slavePID, signal.SIGKILL)
-    self.shutdown_flag = True
-    self.terminal_output_thread.join()
-
-
-  def send(self,c : str):
-    if not isinstance(c,bytes):
-      c = c.encode(ucode)
-    os.write(self.termfd,c)
-
-  def sync_windows_size(self):
-    winsz = struct.pack('HHHH',0,0,0,0)
-    winsz = fcntl.ioctl(self.STDINFD, termios.TIOCGWINSZ, winsz)
-    fcntl.ioctl(self.termfd, termios.TIOCSWINSZ, winsz)
-
-
-  
-  def set_output_mode(self,mode : OutputMode):
-    self.output_mode = mode
-
-
+    def set_output_mode(self, mode: OutputMode):
+        self.output_mode = mode
