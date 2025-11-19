@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pygsc"
-version = "0.8"
+version = "0.9"
 description = "Run command-line demos from a script."
 authors = [{ name = "CD Clark III", email = "clifton.clark@gmail.com" }]
 requires-python = "~=3.10.0"
